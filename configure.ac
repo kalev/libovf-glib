@@ -18,6 +18,8 @@ AC_PROG_CC
 
 GNOME_COMPILE_WARNINGS([maximum])
 
+GLIB_TESTS
+
 PKG_CHECK_MODULES(LIBOVF_GLIB, [
 	gobject-2.0
 	glib-2.0
@@ -28,6 +30,7 @@ PKG_CHECK_MODULES(LIBOVF_GLIB, [
 AC_CONFIG_FILES([
 Makefile
 libovf-glib/Makefile
+tests/Makefile
 ])
 
 AC_OUTPUT
