@@ -44,6 +44,11 @@ OvfParser		 *ovf_parser_new			(void);
 gboolean		  ovf_parser_load_from_file		(OvfParser		 *self,
 								 const gchar		 *filename,
 								 GError			**error);
+gboolean		  ovf_parser_load_from_data		(OvfParser		 *self,
+								 const gchar		 *data,
+								 gssize			 length,
+								 GError			**error);
+
 
 
 G_END_DECLS

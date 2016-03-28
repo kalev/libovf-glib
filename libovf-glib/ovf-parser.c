@@ -38,19 +38,37 @@ ovf_parser_load_from_file (OvfParser     *self,
                            const gchar   *filename,
                            GError       **error)
 {
+	g_autofree gchar *data = NULL;
+	gsize length;
+
+	g_return_val_if_fail (OVF_IS_PARSER (self), FALSE);
+	g_return_val_if_fail (filename != NULL, FALSE);
+
+	if (!g_file_get_contents (filename, &data, &length, error))
+		return FALSE;
+
+	return ovf_parser_load_from_data (self, data, length, error);
+}
+
+gboolean
+ovf_parser_load_from_data (OvfParser    *self,
+                           const gchar  *data,
+                           gssize        length,
+                           GError      **error)
+{
 	gboolean ret;
 	xmlDoc *doc = NULL;
 	xmlXPathContext *ctx = NULL;
 
-	g_debug ("loading from file '%s'", filename);
+	g_return_val_if_fail (OVF_IS_PARSER (self), FALSE);
+	g_return_val_if_fail (data != NULL, FALSE);
 
-	doc = xmlParseDoc ((const xmlChar *) filename);
+	doc = xmlParseMemory (data, length);
 	if (doc == NULL) {
 		g_set_error (error,
 		             OVF_PARSER_ERROR,
 		             OVF_PARSER_ERROR_XML,
-		             "Could not parse '%s'",
-		             filename);
+		             "Could not parse XML");
 
 		ret = FALSE;
 		goto out;
