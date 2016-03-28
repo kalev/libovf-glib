@@ -22,6 +22,7 @@ PKG_CHECK_MODULES(LIBOVF_GLIB, [
 	gobject-2.0
 	glib-2.0
 	gio-2.0
+	libxml-2.0
 ])
 
 AC_CONFIG_FILES([

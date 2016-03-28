@@ -14,9 +14,14 @@ libovf_glib_0_1_la_LDFLAGS =				\
 libovf_glib_0_1_la_LIBADD = $(LIBOVF_GLIB_LIBS)
 
 H_FILES =					\
-	ovf.h
+	ovf.h					\
+	ovf-parser.h
+
+C_FILES =					\
+	ovf-parser.c
 
 libovf_glib_0_1_la_SOURCES = 	\
-	$(H_FILES)
+	$(H_FILES)		\
+	$(C_FILES)
 
 -include $(top_srcdir)/git.mk
