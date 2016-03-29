@@ -46,6 +46,19 @@ test_missing_sections (void)
 	g_assert_error (error, OVF_PARSER_ERROR, OVF_PARSER_ERROR_XML);
 }
 
+static void
+test_load_valid_ovf (void)
+{
+	g_autoptr(GError) error = NULL;
+	g_autoptr(OvfParser) parser = NULL;
+
+	parser = ovf_parser_new ();
+	ovf_parser_load_from_file (parser,
+	                           g_test_get_filename (G_TEST_DIST, "Fedora_23.ovf", NULL),
+	                           &error);
+	g_assert_no_error (error);
+}
+
 int
 main (int   argc,
       char *argv[])
@@ -54,6 +67,7 @@ main (int   argc,
 
 	g_test_add_func ("/parser/init-parser", test_init_parser);
 	g_test_add_func ("/parser/missing-sections", test_missing_sections);
+	g_test_add_func ("/parser/load-valid-ovf", test_load_valid_ovf);
 
 	return g_test_run ();
 }

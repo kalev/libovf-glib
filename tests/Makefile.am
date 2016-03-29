@@ -13,4 +13,8 @@ test_programs =	\
 	parser			\
 	$(NULL)
 
+dist_test_data =				\
+	Fedora_23.ovf				\
+	$(NULL)
+
 -include $(top_srcdir)/git.mk
