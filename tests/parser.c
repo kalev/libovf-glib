@@ -29,6 +29,23 @@ test_init_parser (void)
 	g_assert (OVF_IS_PARSER (parser));
 }
 
+static void
+test_missing_sections (void)
+{
+	g_autoptr(GError) error = NULL;
+	g_autoptr(OvfParser) parser = NULL;
+	gchar data[] =
+"<?xml version=\"1.0\"?>"
+"<Envelope ovf:version=\"1.0\" xml:lang=\"en-US\" xmlns=\"http://schemas.dmtf.org/ovf/envelope/1\" xmlns:ovf=\"http://schemas.dmtf.org/ovf/envelope/1\">"
+"  <VirtualSystem ovf:id=\"Fedora 23\">"
+"  </VirtualSystem>"
+"</Envelope>";
+
+	parser = ovf_parser_new ();
+	ovf_parser_load_from_data (parser, data, -1, &error);
+	g_assert_error (error, OVF_PARSER_ERROR, OVF_PARSER_ERROR_XML);
+}
+
 int
 main (int   argc,
       char *argv[])
@@ -36,6 +53,7 @@ main (int   argc,
 	g_test_init (&argc, &argv, NULL);
 
 	g_test_add_func ("/parser/init-parser", test_init_parser);
+	g_test_add_func ("/parser/missing-sections", test_missing_sections);
 
 	return g_test_run ();
 }

@@ -33,6 +33,11 @@ G_DEFINE_TYPE (OvfParser, ovf_parser, G_TYPE_OBJECT)
 
 G_DEFINE_QUARK (ovf-parser-error-quark, ovf_parser_error)
 
+#define OVF_PATH_ENVELOPE "/ovf:Envelope[1]"
+#define OVF_PATH_VIRTUALSYSTEM OVF_PATH_ENVELOPE "/ovf:VirtualSystem"
+#define OVF_PATH_OPERATINGSYSTEM OVF_PATH_VIRTUALSYSTEM "/ovf:OperatingSystemSection"
+#define OVF_PATH_VIRTUALHARDWARE OVF_PATH_VIRTUALSYSTEM "/ovf:VirtualHardwareSection"
+
 gboolean
 ovf_parser_load_from_file (OvfParser     *self,
                            const gchar   *filename,
@@ -48,6 +53,23 @@ ovf_parser_load_from_file (OvfParser     *self,
 		return FALSE;
 
 	return ovf_parser_load_from_data (self, data, length, error);
+}
+
+static gboolean
+xpath_section_exists (xmlXPathContext *ctx, const gchar *path)
+{
+	xmlXPathObject *obj;
+
+	obj = xmlXPathEval ((const xmlChar *) path, ctx);
+	if (obj == NULL ||
+	    obj->type != XPATH_NODESET ||
+	    obj->nodesetval == NULL ||
+	    obj->nodesetval->nodeNr == 0) {
+		return FALSE;
+	}
+
+	xmlXPathFreeObject (obj);
+	return TRUE;
 }
 
 gboolean
@@ -69,7 +91,6 @@ ovf_parser_load_from_data (OvfParser    *self,
 		             OVF_PARSER_ERROR,
 		             OVF_PARSER_ERROR_XML,
 		             "Could not parse XML");
-
 		ret = FALSE;
 		goto out;
 	}
@@ -78,6 +99,33 @@ ovf_parser_load_from_data (OvfParser    *self,
 	xmlXPathRegisterNs (ctx,
 	                    (const xmlChar *) "ovf",
 	                    (const xmlChar *) "http://schemas.dmtf.org/ovf/envelope/1");
+
+	if (!xpath_section_exists (ctx, OVF_PATH_VIRTUALSYSTEM)) {
+		g_set_error (error,
+		             OVF_PARSER_ERROR,
+		             OVF_PARSER_ERROR_XML,
+		             "Could not find VirtualSystem section");
+		ret = FALSE;
+		goto out;
+	}
+
+	if (!xpath_section_exists (ctx, OVF_PATH_OPERATINGSYSTEM)) {
+		g_set_error (error,
+		             OVF_PARSER_ERROR,
+		             OVF_PARSER_ERROR_XML,
+		             "Could not find OperatingSystem section");
+		ret = FALSE;
+		goto out;
+	}
+
+	if (!xpath_section_exists (ctx, OVF_PATH_VIRTUALHARDWARE)) {
+		g_set_error (error,
+		             OVF_PARSER_ERROR,
+		             OVF_PARSER_ERROR_XML,
+		             "Could not find VirtualHardware section");
+		ret = FALSE;
+		goto out;
+	}
 
 	ret = TRUE;
 out:
