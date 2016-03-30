@@ -21,6 +21,6 @@
 #ifndef __OVF_H__
 #define __OVF_H__
 
-#include <libovf-glib/ovf-parser.h>
+#include <libovf-glib/ovf-package.h>
 
 #endif /* __OVF_H__ */

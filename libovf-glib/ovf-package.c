@@ -18,20 +18,20 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#include "ovf-parser.h"
+#include "ovf-package.h"
 
 #include <libxml/parser.h>
 #include <libxml/xpath.h>
 #include <libxml/xpathInternals.h>
 
-struct _OvfParser
+struct _OvfPackage
 {
 	GObject parent_instance;
 };
 
-G_DEFINE_TYPE (OvfParser, ovf_parser, G_TYPE_OBJECT)
+G_DEFINE_TYPE (OvfPackage, ovf_package, G_TYPE_OBJECT)
 
-G_DEFINE_QUARK (ovf-parser-error-quark, ovf_parser_error)
+G_DEFINE_QUARK (ovf-package-error-quark, ovf_package_error)
 
 #define OVF_PATH_ENVELOPE "/ovf:Envelope[1]"
 #define OVF_PATH_VIRTUALSYSTEM OVF_PATH_ENVELOPE "/ovf:VirtualSystem"
@@ -39,20 +39,20 @@ G_DEFINE_QUARK (ovf-parser-error-quark, ovf_parser_error)
 #define OVF_PATH_VIRTUALHARDWARE OVF_PATH_VIRTUALSYSTEM "/ovf:VirtualHardwareSection"
 
 gboolean
-ovf_parser_load_from_file (OvfParser     *self,
-                           const gchar   *filename,
-                           GError       **error)
+ovf_package_load_from_file (OvfPackage   *self,
+                            const gchar  *filename,
+                            GError      **error)
 {
 	g_autofree gchar *data = NULL;
 	gsize length;
 
-	g_return_val_if_fail (OVF_IS_PARSER (self), FALSE);
+	g_return_val_if_fail (OVF_IS_PACKAGE (self), FALSE);
 	g_return_val_if_fail (filename != NULL, FALSE);
 
 	if (!g_file_get_contents (filename, &data, &length, error))
 		return FALSE;
 
-	return ovf_parser_load_from_data (self, data, length, error);
+	return ovf_package_load_from_data (self, data, length, error);
 }
 
 static gboolean
@@ -96,10 +96,10 @@ xpath_str (xmlXPathContext *ctx, const gchar *path)
 }
 
 gboolean
-ovf_parser_load_from_data (OvfParser    *self,
-                           const gchar  *data,
-                           gssize        length,
-                           GError      **error)
+ovf_package_load_from_data (OvfPackage   *self,
+                            const gchar  *data,
+                            gssize        length,
+                            GError      **error)
 {
 	g_autofree gchar *desc = NULL;
 	g_autofree gchar *name = NULL;
@@ -107,14 +107,14 @@ ovf_parser_load_from_data (OvfParser    *self,
 	xmlDoc *doc = NULL;
 	xmlXPathContext *ctx = NULL;
 
-	g_return_val_if_fail (OVF_IS_PARSER (self), FALSE);
+	g_return_val_if_fail (OVF_IS_PACKAGE (self), FALSE);
 	g_return_val_if_fail (data != NULL, FALSE);
 
 	doc = xmlParseMemory (data, length);
 	if (doc == NULL) {
 		g_set_error (error,
-		             OVF_PARSER_ERROR,
-		             OVF_PARSER_ERROR_XML,
+		             OVF_PACKAGE_ERROR,
+		             OVF_PACKAGE_ERROR_XML,
 		             "Could not parse XML");
 		ret = FALSE;
 		goto out;
@@ -127,8 +127,8 @@ ovf_parser_load_from_data (OvfParser    *self,
 
 	if (!xpath_section_exists (ctx, OVF_PATH_VIRTUALSYSTEM)) {
 		g_set_error (error,
-		             OVF_PARSER_ERROR,
-		             OVF_PARSER_ERROR_XML,
+		             OVF_PACKAGE_ERROR,
+		             OVF_PACKAGE_ERROR_XML,
 		             "Could not find VirtualSystem section");
 		ret = FALSE;
 		goto out;
@@ -136,8 +136,8 @@ ovf_parser_load_from_data (OvfParser    *self,
 
 	if (!xpath_section_exists (ctx, OVF_PATH_OPERATINGSYSTEM)) {
 		g_set_error (error,
-		             OVF_PARSER_ERROR,
-		             OVF_PARSER_ERROR_XML,
+		             OVF_PACKAGE_ERROR,
+		             OVF_PACKAGE_ERROR_XML,
 		             "Could not find OperatingSystem section");
 		ret = FALSE;
 		goto out;
@@ -145,8 +145,8 @@ ovf_parser_load_from_data (OvfParser    *self,
 
 	if (!xpath_section_exists (ctx, OVF_PATH_VIRTUALHARDWARE)) {
 		g_set_error (error,
-		             OVF_PARSER_ERROR,
-		             OVF_PARSER_ERROR_XML,
+		             OVF_PACKAGE_ERROR,
+		             OVF_PACKAGE_ERROR_XML,
 		             "Could not find VirtualHardware section");
 		ret = FALSE;
 		goto out;
@@ -167,18 +167,18 @@ out:
 	return ret;
 }
 
-OvfParser *
-ovf_parser_new (void)
+OvfPackage *
+ovf_package_new (void)
 {
-	return g_object_new (OVF_TYPE_PARSER, NULL);
+	return g_object_new (OVF_TYPE_PACKAGE, NULL);
 }
 
 static void
-ovf_parser_class_init (OvfParserClass *klass)
+ovf_package_class_init (OvfPackageClass *klass)
 {
 }
 
 static void
-ovf_parser_init (OvfParser *self)
+ovf_package_init (OvfPackage *self)
 {
 }

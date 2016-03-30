@@ -18,8 +18,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#ifndef __OVF_PARSER_H__
-#define __OVF_PARSER_H__
+#ifndef __OVF_PACKAGE_H__
+#define __OVF_PACKAGE_H__
 
 #include <gio/gio.h>
 #include <glib.h>
@@ -27,30 +27,30 @@
 
 G_BEGIN_DECLS
 
-#define OVF_TYPE_PARSER (ovf_parser_get_type ())
-G_DECLARE_FINAL_TYPE (OvfParser, ovf_parser, OVF, PARSER, GObject)
+#define OVF_TYPE_PACKAGE (ovf_package_get_type ())
+G_DECLARE_FINAL_TYPE (OvfPackage, ovf_package, OVF, PACKAGE, GObject)
 
-#define OVF_PARSER_ERROR (ovf_parser_error_quark ())
+#define OVF_PACKAGE_ERROR (ovf_package_error_quark ())
 
 typedef enum
 {
-	OVF_PARSER_ERROR_XML,
-	OVF_PARSER_ERROR_LAST
-} OvfParserError;
+	OVF_PACKAGE_ERROR_XML,
+	OVF_PACKAGE_ERROR_LAST
+} OvfPackageError;
 
-GQuark			  ovf_parser_error_quark		(void);
+GQuark			  ovf_package_error_quark		(void);
 
-OvfParser		 *ovf_parser_new			(void);
-gboolean		  ovf_parser_load_from_file		(OvfParser		 *self,
+OvfPackage		 *ovf_package_new			(void);
+gboolean		  ovf_package_load_from_file		(OvfPackage		 *self,
 								 const gchar		 *filename,
 								 GError			**error);
-gboolean		  ovf_parser_load_from_data		(OvfParser		 *self,
+gboolean		  ovf_package_load_from_data		(OvfPackage		 *self,
 								 const gchar		 *data,
-								 gssize			 length,
+								 gssize			  length,
 								 GError			**error);
 
 
 
 G_END_DECLS
 
-#endif /* __OVF_PARSER_H__ */
+#endif /* __OVF_PACKAGE_H__ */

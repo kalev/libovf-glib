@@ -18,22 +18,22 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#include <libovf-glib/ovf-parser.h>
+#include <libovf-glib/ovf-package.h>
 
 static void
 test_init_parser (void)
 {
-	g_autoptr(OvfParser) parser = NULL;
+	g_autoptr(OvfPackage) ovf_package = NULL;
 
-	parser = ovf_parser_new ();
-	g_assert (OVF_IS_PARSER (parser));
+	ovf_package = ovf_package_new ();
+	g_assert (OVF_IS_PACKAGE (ovf_package));
 }
 
 static void
 test_missing_sections (void)
 {
 	g_autoptr(GError) error = NULL;
-	g_autoptr(OvfParser) parser = NULL;
+	g_autoptr(OvfPackage) ovf_package = NULL;
 	gchar data[] =
 "<?xml version=\"1.0\"?>"
 "<Envelope ovf:version=\"1.0\" xml:lang=\"en-US\" xmlns=\"http://schemas.dmtf.org/ovf/envelope/1\" xmlns:ovf=\"http://schemas.dmtf.org/ovf/envelope/1\">"
@@ -41,21 +41,21 @@ test_missing_sections (void)
 "  </VirtualSystem>"
 "</Envelope>";
 
-	parser = ovf_parser_new ();
-	ovf_parser_load_from_data (parser, data, -1, &error);
-	g_assert_error (error, OVF_PARSER_ERROR, OVF_PARSER_ERROR_XML);
+	ovf_package = ovf_package_new ();
+	ovf_package_load_from_data (ovf_package, data, -1, &error);
+	g_assert_error (error, OVF_PACKAGE_ERROR, OVF_PACKAGE_ERROR_XML);
 }
 
 static void
 test_load_valid_ovf (void)
 {
 	g_autoptr(GError) error = NULL;
-	g_autoptr(OvfParser) parser = NULL;
+	g_autoptr(OvfPackage) ovf_package = NULL;
 
-	parser = ovf_parser_new ();
-	ovf_parser_load_from_file (parser,
-	                           g_test_get_filename (G_TEST_DIST, "Fedora_23.ovf", NULL),
-	                           &error);
+	ovf_package = ovf_package_new ();
+	ovf_package_load_from_file (ovf_package,
+	                            g_test_get_filename (G_TEST_DIST, "Fedora_23.ovf", NULL),
+	                            &error);
 	g_assert_no_error (error);
 }
 
