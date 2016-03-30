@@ -72,12 +72,37 @@ xpath_section_exists (xmlXPathContext *ctx, const gchar *path)
 	return TRUE;
 }
 
+static gchar *
+xpath_str (xmlXPathContext *ctx, const gchar *path)
+{
+	xmlChar *content;
+	xmlXPathObject *obj;
+	gchar *ret;
+
+	obj = xmlXPathEval ((const xmlChar *) path, ctx);
+	if (obj == NULL ||
+	    obj->type != XPATH_NODESET ||
+	    obj->nodesetval == NULL ||
+	    obj->nodesetval->nodeNr == 0) {
+		return NULL;
+	}
+
+	content = xmlNodeGetContent (obj->nodesetval->nodeTab[0]);
+	ret = g_strdup ((const gchar *) content);
+
+	xmlFree (content);
+	xmlXPathFreeObject (obj);
+	return ret;
+}
+
 gboolean
 ovf_parser_load_from_data (OvfParser    *self,
                            const gchar  *data,
                            gssize        length,
                            GError      **error)
 {
+	g_autofree gchar *desc = NULL;
+	g_autofree gchar *name = NULL;
 	gboolean ret;
 	xmlDoc *doc = NULL;
 	xmlXPathContext *ctx = NULL;
@@ -126,6 +151,11 @@ ovf_parser_load_from_data (OvfParser    *self,
 		ret = FALSE;
 		goto out;
 	}
+
+	name = xpath_str (ctx, OVF_PATH_VIRTUALSYSTEM "/ovf:Name");
+	desc = xpath_str (ctx, OVF_PATH_VIRTUALSYSTEM "/ovf:AnnotationSection/ovf:Annotation");
+
+	g_debug ("name: %s, desc: %s", name, desc);
 
 	ret = TRUE;
 out:
