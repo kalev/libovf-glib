@@ -20,9 +20,13 @@
 
 #include "ovf-package.h"
 
+#include <archive.h>
+#include <archive_entry.h>
+#include <glib/gstdio.h>
 #include <libxml/parser.h>
 #include <libxml/xpath.h>
 #include <libxml/xpathInternals.h>
+#include <string.h>
 
 struct _OvfPackage
 {
@@ -37,6 +41,136 @@ G_DEFINE_QUARK (ovf-package-error-quark, ovf_package_error)
 #define OVF_PATH_VIRTUALSYSTEM OVF_PATH_ENVELOPE "/ovf:VirtualSystem"
 #define OVF_PATH_OPERATINGSYSTEM OVF_PATH_VIRTUALSYSTEM "/ovf:OperatingSystemSection"
 #define OVF_PATH_VIRTUALHARDWARE OVF_PATH_VIRTUALSYSTEM "/ovf:VirtualHardwareSection"
+
+static gboolean
+endswith (const gchar *str, const gchar *search)
+{
+	gsize str_len = strlen (str);
+	gsize search_len = strlen (search);
+
+	if (str_len < search_len)
+		return FALSE;
+
+	return g_ascii_strcasecmp (str + str_len - search_len, search) == 0;
+}
+
+static gboolean
+extract_ovf_to_fd (const gchar  *ova_filename,
+                   gint          out_fd,
+                   GError      **error)
+{
+	gboolean found;
+	gboolean ret = TRUE;
+	int r;
+	struct archive *a = NULL;
+
+	/* open the .ova archive */
+	a = archive_read_new ();
+	archive_read_support_format_all (a);
+	archive_read_support_filter_all (a);
+	r = archive_read_open_filename (a, ova_filename, 10240);
+	if (r != ARCHIVE_OK) {
+		g_set_error (error,
+			     OVF_PACKAGE_ERROR,
+			     OVF_PACKAGE_ERROR_FAILED,
+			     "Cannot open: %s",
+			     archive_error_string (a));
+		ret = FALSE;
+		goto out;
+	}
+
+	/* find first .ovf file and extract it */
+	found = FALSE;
+	for (;;) {
+		g_autofree gchar *buf = NULL;
+		const gchar *name;
+		struct archive_entry *entry;
+
+		r = archive_read_next_header (a, &entry);
+		if (r == ARCHIVE_EOF)
+			break;
+		if (r != ARCHIVE_OK) {
+			g_set_error (error,
+			             OVF_PACKAGE_ERROR,
+			             OVF_PACKAGE_ERROR_FAILED,
+			             "Cannot read header: %s",
+			             archive_error_string (a));
+			ret = FALSE;
+			goto out;
+		}
+
+		/* did we find an .ovf file? */
+		name = archive_entry_pathname (entry);
+		if (name != NULL && endswith (name, ".ovf")) {
+			r = archive_read_data_into_fd (a, out_fd);
+			if (r != ARCHIVE_OK) {
+				g_set_error (error,
+				             OVF_PACKAGE_ERROR,
+				             OVF_PACKAGE_ERROR_FAILED,
+				             "Cannot extract: %s",
+				             archive_error_string (a));
+				ret = FALSE;
+				goto out;
+			}
+			found = TRUE;
+			break;
+		}
+	}
+
+	if (!found) {
+		g_set_error (error,
+		             OVF_PACKAGE_ERROR,
+		             OVF_PACKAGE_ERROR_NOT_FOUND,
+		             "Could not find any .ovf files");
+		ret = FALSE;
+	}
+
+out:
+	if (a != NULL) {
+		archive_read_close (a);
+		archive_read_free (a);
+	}
+	return ret;
+}
+
+gboolean
+ovf_package_load_from_ova_file (OvfPackage   *self,
+                                const gchar  *filename,
+                                GError      **error)
+{
+	g_autofree gchar *tmp_path = NULL;
+	gint tmp_fd = -1;
+	gboolean ret = TRUE;
+
+	g_return_val_if_fail (OVF_IS_PACKAGE (self), FALSE);
+	g_return_val_if_fail (filename != NULL, FALSE);
+
+	/* open a temporary file */
+	tmp_fd = g_file_open_tmp ("ovf-package-XXXXXX.ovf", &tmp_path, error);
+	if (tmp_fd == -1) {
+		ret = FALSE;
+		goto out;
+	}
+
+	/* extract an .ovf file */
+	if (!extract_ovf_to_fd (filename, tmp_fd, error)) {
+		ret = FALSE;
+		goto out;
+	}
+
+	if (!ovf_package_load_from_file (self, tmp_path, error)) {
+		ret = FALSE;
+		goto out;
+	}
+
+out:
+	if (tmp_fd != -1) {
+		close (tmp_fd);
+		g_unlink (tmp_path);
+	}
+
+	return ret;
+}
 
 gboolean
 ovf_package_load_from_file (OvfPackage   *self,

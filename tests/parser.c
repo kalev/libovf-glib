@@ -59,6 +59,19 @@ test_load_valid_ovf (void)
 	g_assert_no_error (error);
 }
 
+static void
+test_load_valid_ova (void)
+{
+	g_autoptr(GError) error = NULL;
+	g_autoptr(OvfPackage) ovf_package = NULL;
+
+	ovf_package = ovf_package_new ();
+	ovf_package_load_from_ova_file (ovf_package,
+	                                g_test_get_filename (G_TEST_DIST, "Fedora_23.ova", NULL),
+	                                &error);
+	g_assert_no_error (error);
+}
+
 int
 main (int   argc,
       char *argv[])
@@ -68,6 +81,7 @@ main (int   argc,
 	g_test_add_func ("/parser/init-parser", test_init_parser);
 	g_test_add_func ("/parser/missing-sections", test_missing_sections);
 	g_test_add_func ("/parser/load-valid-ovf", test_load_valid_ovf);
+	g_test_add_func ("/parser/load-valid-ova", test_load_valid_ova);
 
 	return g_test_run ();
 }

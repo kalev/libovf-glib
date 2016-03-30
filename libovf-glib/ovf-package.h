@@ -34,6 +34,8 @@ G_DECLARE_FINAL_TYPE (OvfPackage, ovf_package, OVF, PACKAGE, GObject)
 
 typedef enum
 {
+	OVF_PACKAGE_ERROR_FAILED,
+	OVF_PACKAGE_ERROR_NOT_FOUND,
 	OVF_PACKAGE_ERROR_XML,
 	OVF_PACKAGE_ERROR_LAST
 } OvfPackageError;
@@ -41,6 +43,9 @@ typedef enum
 GQuark			  ovf_package_error_quark		(void);
 
 OvfPackage		 *ovf_package_new			(void);
+gboolean		  ovf_package_load_from_ova_file	(OvfPackage		 *self,
+								 const gchar		 *filename,
+								 GError			**error);
 gboolean		  ovf_package_load_from_file		(OvfPackage		 *self,
 								 const gchar		 *filename,
 								 GError			**error);

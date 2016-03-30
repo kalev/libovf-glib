@@ -14,6 +14,7 @@ test_programs =	\
 	$(NULL)
 
 dist_test_data =				\
+	Fedora_23.ova				\
 	Fedora_23.ovf				\
 	$(NULL)
 
