@@ -226,6 +226,7 @@ out:
 static gboolean
 xpath_section_exists (xmlXPathContext *ctx, const gchar *path)
 {
+	gboolean ret = TRUE;
 	xmlXPathObject *obj;
 
 	obj = xmlXPathEval ((const xmlChar *) path, ctx);
@@ -233,17 +234,21 @@ xpath_section_exists (xmlXPathContext *ctx, const gchar *path)
 	    obj->type != XPATH_NODESET ||
 	    obj->nodesetval == NULL ||
 	    obj->nodesetval->nodeNr == 0) {
-		return FALSE;
+		ret = FALSE;
+		goto out;
 	}
 
-	xmlXPathFreeObject (obj);
-	return TRUE;
+out:
+	if (obj != NULL)
+		xmlXPathFreeObject (obj);
+
+	return ret;
 }
 
 static gchar *
 xpath_str (xmlXPathContext *ctx, const gchar *path)
 {
-	xmlChar *content;
+	xmlChar *content = NULL;
 	xmlXPathObject *obj;
 	gchar *ret;
 
@@ -252,14 +257,19 @@ xpath_str (xmlXPathContext *ctx, const gchar *path)
 	    obj->type != XPATH_NODESET ||
 	    obj->nodesetval == NULL ||
 	    obj->nodesetval->nodeNr == 0) {
-		return NULL;
+		ret = NULL;
+		goto out;
 	}
 
 	content = xmlNodeGetContent (obj->nodesetval->nodeTab[0]);
 	ret = g_strdup ((const gchar *) content);
 
-	xmlFree (content);
-	xmlXPathFreeObject (obj);
+out:
+	if (content != NULL)
+		xmlFree (content);
+	if (obj != NULL)
+		xmlXPathFreeObject (obj);
+
 	return ret;
 }
 
@@ -267,7 +277,7 @@ static GPtrArray *
 parse_disks (xmlXPathContext *ctx)
 {
 	gint i;
-	GPtrArray *disks = g_ptr_array_new_with_free_func (g_object_unref);
+	g_autoptr(GPtrArray) disks = NULL;
 	xmlXPathObject *obj;
 
 	obj = xmlXPathEval ((const xmlChar *) OVF_PATH_DISKSECTION "/ovf:Disk", ctx);
@@ -275,9 +285,10 @@ parse_disks (xmlXPathContext *ctx)
 	    obj->type != XPATH_NODESET ||
 	    obj->nodesetval == NULL ||
 	    obj->nodesetval->nodeNr == 0) {
-		return NULL;
+		goto out;
 	}
 
+	disks = g_ptr_array_new_with_free_func (g_object_unref);
 	for (i = 0; i < obj->nodesetval->nodeNr; i++) {
 		OvfDisk *disk = ovf_disk_new ();
 		xmlNode *node = obj->nodesetval->nodeTab[i];
@@ -309,6 +320,10 @@ parse_disks (xmlXPathContext *ctx)
 
 		g_ptr_array_add (disks, disk);
 	}
+
+out:
+	if (obj != NULL)
+		xmlXPathFreeObject (obj);
 
 	return g_steal_pointer (&disks);
 }
