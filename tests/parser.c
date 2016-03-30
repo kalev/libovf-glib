@@ -18,6 +18,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
+#include <libovf-glib/ovf-disk.h>
 #include <libovf-glib/ovf-package.h>
 
 static void
@@ -97,6 +98,28 @@ test_save_ovf (void)
 	g_assert_no_error (error);
 }
 
+static void
+test_get_disks (void)
+{
+	g_autoptr(GError) error = NULL;
+	g_autoptr(GPtrArray) ovf_disks = NULL;
+	g_autoptr(OvfPackage) ovf_package = NULL;
+	const gchar *disk_id;
+
+	ovf_package = ovf_package_new ();
+	ovf_package_load_from_file (ovf_package,
+	                            g_test_get_filename (G_TEST_DIST, "Fedora_23.ovf", NULL),
+	                            &error);
+	g_assert_no_error (error);
+
+	ovf_disks = ovf_package_get_disks (ovf_package);
+	g_assert (ovf_disks != NULL);
+	g_assert (ovf_disks->len == 1);
+
+	disk_id = ovf_disk_get_disk_id ((OvfDisk *) g_ptr_array_index (ovf_disks, 0));
+	g_assert_cmpstr (disk_id, ==, "vmdisk2");
+}
+
 int
 main (int   argc,
       char *argv[])
@@ -108,6 +131,7 @@ main (int   argc,
 	g_test_add_func ("/parser/load-valid-ovf", test_load_valid_ovf);
 	g_test_add_func ("/parser/load-valid-ova", test_load_valid_ova);
 	g_test_add_func ("/parser/save-ovf", test_save_ovf);
+	g_test_add_func ("/parser/get-disks", test_get_disks);
 
 	return g_test_run ();
 }

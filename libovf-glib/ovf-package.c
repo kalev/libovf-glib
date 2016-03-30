@@ -20,6 +20,8 @@
 
 #include "ovf-package.h"
 
+#include "ovf-disk.h"
+
 #include <archive.h>
 #include <archive_entry.h>
 #include <glib/gstdio.h>
@@ -31,6 +33,8 @@
 struct _OvfPackage
 {
 	GObject			  parent_instance;
+
+	GPtrArray		 *disks;
 	xmlDoc			 *doc;
 };
 
@@ -38,7 +42,10 @@ G_DEFINE_TYPE (OvfPackage, ovf_package, G_TYPE_OBJECT)
 
 G_DEFINE_QUARK (ovf-package-error-quark, ovf_package_error)
 
+#define OVF_NS_ENVELOPE "http://schemas.dmtf.org/ovf/envelope/1"
+
 #define OVF_PATH_ENVELOPE "/ovf:Envelope[1]"
+#define OVF_PATH_DISKSECTION OVF_PATH_ENVELOPE "/ovf:DiskSection"
 #define OVF_PATH_VIRTUALSYSTEM OVF_PATH_ENVELOPE "/ovf:VirtualSystem"
 #define OVF_PATH_OPERATINGSYSTEM OVF_PATH_VIRTUALSYSTEM "/ovf:OperatingSystemSection"
 #define OVF_PATH_VIRTUALHARDWARE OVF_PATH_VIRTUALSYSTEM "/ovf:VirtualHardwareSection"
@@ -256,6 +263,55 @@ xpath_str (xmlXPathContext *ctx, const gchar *path)
 	return ret;
 }
 
+static GPtrArray *
+parse_disks (xmlXPathContext *ctx)
+{
+	gint i;
+	GPtrArray *disks = g_ptr_array_new_with_free_func (g_object_unref);
+	xmlXPathObject *obj;
+
+	obj = xmlXPathEval ((const xmlChar *) OVF_PATH_DISKSECTION "/ovf:Disk", ctx);
+	if (obj == NULL ||
+	    obj->type != XPATH_NODESET ||
+	    obj->nodesetval == NULL ||
+	    obj->nodesetval->nodeNr == 0) {
+		return NULL;
+	}
+
+	for (i = 0; i < obj->nodesetval->nodeNr; i++) {
+		OvfDisk *disk = ovf_disk_new ();
+		xmlNode *node = obj->nodesetval->nodeTab[i];
+		xmlChar *str;
+
+		str = xmlGetNsProp (node,
+		                    (const xmlChar *) "capacity",
+		                    (const xmlChar *) OVF_NS_ENVELOPE);
+		ovf_disk_set_capacity (disk, (const gchar *) str);
+		xmlFree (str);
+
+		str = xmlGetNsProp (node,
+		                    (const xmlChar *) "diskId",
+		                    (const xmlChar *) OVF_NS_ENVELOPE);
+		ovf_disk_set_disk_id (disk, (const gchar *) str);
+		xmlFree (str);
+
+		str = xmlGetNsProp (node,
+		                    (const xmlChar *) "fileRef",
+		                    (const xmlChar *) OVF_NS_ENVELOPE);
+		ovf_disk_set_file_ref (disk, (const gchar *) str);
+		xmlFree (str);
+
+		str = xmlGetNsProp (node,
+		                    (const xmlChar *) "format",
+		                    (const xmlChar *) OVF_NS_ENVELOPE);
+		ovf_disk_set_format (disk, (const gchar *) str);
+		xmlFree (str);
+
+		g_ptr_array_add (disks, disk);
+	}
+
+	return g_steal_pointer (&disks);
+}
 gboolean
 ovf_package_load_from_data (OvfPackage   *self,
                             const gchar  *data,
@@ -320,12 +376,26 @@ ovf_package_load_from_data (OvfPackage   *self,
 
 	g_debug ("name: %s, desc: %s", name, desc);
 
+	if (self->disks != NULL)
+		g_ptr_array_free (self->disks, TRUE);
+
+	self->disks = parse_disks (ctx);
+
 	ret = TRUE;
 out:
 	if (ctx != NULL)
 		xmlXPathFreeContext (ctx);
 
 	return ret;
+}
+
+GPtrArray *
+ovf_package_get_disks (OvfPackage  *self)
+{
+	if (self->disks == NULL)
+		return NULL;
+
+	return g_ptr_array_ref (self->disks);
 }
 
 OvfPackage *
@@ -339,6 +409,8 @@ ovf_package_finalize (GObject *object)
 {
 	OvfPackage *self = OVF_PACKAGE (object);
 
+	if (self->disks != NULL)
+		g_ptr_array_free (self->disks, TRUE);
 	if (self->doc != NULL)
 		xmlFreeDoc (self->doc);
 

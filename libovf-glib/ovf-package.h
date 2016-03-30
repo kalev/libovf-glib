@@ -56,8 +56,7 @@ gboolean		  ovf_package_load_from_data		(OvfPackage		 *self,
 gboolean		  ovf_package_save_file			(OvfPackage		 *self,
 								 const gchar		 *filename,
 								 GError			**error);
-
-
+GPtrArray		 *ovf_package_get_disks			(OvfPackage		 *self);
 
 G_END_DECLS
 

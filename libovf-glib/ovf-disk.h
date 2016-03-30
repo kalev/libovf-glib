@@ -18,10 +18,31 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#ifndef __OVF_H__
-#define __OVF_H__
+#ifndef __OVF_DISK_H__
+#define __OVF_DISK_H__
 
-#include <libovf-glib/ovf-disk.h>
-#include <libovf-glib/ovf-package.h>
+#include <glib-object.h>
 
-#endif /* __OVF_H__ */
+G_BEGIN_DECLS
+
+#define OVF_TYPE_DISK (ovf_disk_get_type ())
+G_DECLARE_FINAL_TYPE (OvfDisk, ovf_disk, OVF, DISK, GObject)
+
+OvfDisk			 *ovf_disk_new				(void);
+const gchar		 *ovf_disk_get_capacity			(OvfDisk	 *self);
+void			  ovf_disk_set_capacity			(OvfDisk	 *self,
+								 const gchar	 *capacity);
+const gchar		 *ovf_disk_get_disk_id			(OvfDisk	 *self);
+void			  ovf_disk_set_disk_id			(OvfDisk	 *self,
+								 const gchar	 *disk_id);
+const gchar		 *ovf_disk_get_file_ref			(OvfDisk	 *self);
+void			  ovf_disk_set_file_ref			(OvfDisk	 *self,
+								 const gchar	 *file_ref);
+const gchar		 *ovf_disk_get_format			(OvfDisk	 *self);
+void			  ovf_disk_set_format			(OvfDisk	 *self,
+								 const gchar	 *format);
+
+G_END_DECLS
+
+#endif /* __OVF_DISK_H__ */
+

@@ -15,9 +15,11 @@ libovf_glib_0_1_la_LIBADD = $(LIBOVF_GLIB_LIBS)
 
 H_FILES =					\
 	ovf.h					\
+	ovf-disk.h				\
 	ovf-package.h
 
 C_FILES =					\
+	ovf-disk.c				\
 	ovf-package.c
 
 libovf_glib_0_1_la_SOURCES = 	\
