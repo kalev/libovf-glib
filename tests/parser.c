@@ -72,6 +72,31 @@ test_load_valid_ova (void)
 	g_assert_no_error (error);
 }
 
+static void
+test_save_ovf (void)
+{
+	g_autofree gchar *contents = NULL;
+	g_autoptr(GError) error = NULL;
+	g_autoptr(OvfPackage) ovf_package = NULL;
+	gsize length = 0;
+
+	/* first load in an ovf file */
+	ovf_package = ovf_package_new ();
+	ovf_package_load_from_file (ovf_package,
+	                            g_test_get_filename (G_TEST_DIST, "Fedora_23.ovf", NULL),
+	                            &error);
+	g_assert_no_error (error);
+
+	/* save it back to disk */
+	ovf_package_save_file (ovf_package, "/tmp/Fedora_23.ovf", &error);
+	g_assert_no_error (error);
+
+	/* make sure it's not 0 bytes */
+	g_file_get_contents ("/tmp/Fedora_23.ovf", &contents, &length, &error);
+	g_assert (length > 0);
+	g_assert_no_error (error);
+}
+
 int
 main (int   argc,
       char *argv[])
@@ -82,6 +107,7 @@ main (int   argc,
 	g_test_add_func ("/parser/missing-sections", test_missing_sections);
 	g_test_add_func ("/parser/load-valid-ovf", test_load_valid_ovf);
 	g_test_add_func ("/parser/load-valid-ova", test_load_valid_ova);
+	g_test_add_func ("/parser/save-ovf", test_save_ovf);
 
 	return g_test_run ();
 }

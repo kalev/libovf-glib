@@ -53,6 +53,9 @@ gboolean		  ovf_package_load_from_data		(OvfPackage		 *self,
 								 const gchar		 *data,
 								 gssize			  length,
 								 GError			**error);
+gboolean		  ovf_package_save_file			(OvfPackage		 *self,
+								 const gchar		 *filename,
+								 GError			**error);
 
 
 

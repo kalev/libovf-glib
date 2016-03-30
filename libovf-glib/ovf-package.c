@@ -30,7 +30,8 @@
 
 struct _OvfPackage
 {
-	GObject parent_instance;
+	GObject			  parent_instance;
+	xmlDoc			 *doc;
 };
 
 G_DEFINE_TYPE (OvfPackage, ovf_package, G_TYPE_OBJECT)
@@ -189,6 +190,32 @@ ovf_package_load_from_file (OvfPackage   *self,
 	return ovf_package_load_from_data (self, data, length, error);
 }
 
+gboolean
+ovf_package_save_file (OvfPackage   *self,
+                       const gchar  *filename,
+                       GError      **error)
+{
+	gboolean ret = TRUE;
+	int length;
+	xmlChar *data = NULL;
+
+	g_return_val_if_fail (OVF_IS_PACKAGE (self), FALSE);
+	g_return_val_if_fail (filename != NULL, FALSE);
+
+	xmlDocDumpMemory (self->doc, &data, &length);
+
+	if (!g_file_set_contents (filename, (const gchar *) data, (gsize) length, error)) {
+		ret = FALSE;
+		goto out;
+	}
+
+out:
+	if (data != NULL)
+		xmlFree (data);
+
+	return ret;
+}
+
 static gboolean
 xpath_section_exists (xmlXPathContext *ctx, const gchar *path)
 {
@@ -238,14 +265,16 @@ ovf_package_load_from_data (OvfPackage   *self,
 	g_autofree gchar *desc = NULL;
 	g_autofree gchar *name = NULL;
 	gboolean ret;
-	xmlDoc *doc = NULL;
 	xmlXPathContext *ctx = NULL;
 
 	g_return_val_if_fail (OVF_IS_PACKAGE (self), FALSE);
 	g_return_val_if_fail (data != NULL, FALSE);
 
-	doc = xmlParseMemory (data, length);
-	if (doc == NULL) {
+	if (self->doc != NULL)
+		xmlFreeDoc (self->doc);
+
+	self->doc = xmlParseMemory (data, length);
+	if (self->doc == NULL) {
 		g_set_error (error,
 		             OVF_PACKAGE_ERROR,
 		             OVF_PACKAGE_ERROR_XML,
@@ -254,7 +283,7 @@ ovf_package_load_from_data (OvfPackage   *self,
 		goto out;
 	}
 
-	ctx = xmlXPathNewContext (doc);
+	ctx = xmlXPathNewContext (self->doc);
 	xmlXPathRegisterNs (ctx,
 	                    (const xmlChar *) "ovf",
 	                    (const xmlChar *) "http://schemas.dmtf.org/ovf/envelope/1");
@@ -293,8 +322,6 @@ ovf_package_load_from_data (OvfPackage   *self,
 
 	ret = TRUE;
 out:
-	if (doc != NULL)
-		xmlFreeDoc (doc);
 	if (ctx != NULL)
 		xmlXPathFreeContext (ctx);
 
@@ -308,8 +335,22 @@ ovf_package_new (void)
 }
 
 static void
+ovf_package_finalize (GObject *object)
+{
+	OvfPackage *self = OVF_PACKAGE (object);
+
+	if (self->doc != NULL)
+		xmlFreeDoc (self->doc);
+
+	G_OBJECT_CLASS (ovf_package_parent_class)->finalize (object);
+}
+
+static void
 ovf_package_class_init (OvfPackageClass *klass)
 {
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+
+	object_class->finalize = ovf_package_finalize;
 }
 
 static void
