@@ -1,5 +1,7 @@
 lib_LTLIBRARIES = libovf-glib-0.1.la
 
+CLEANFILES =
+
 AM_CPPFLAGS =						\
 	-I$(top_srcdir)					\
 	-I$(top_builddir)				\
@@ -51,7 +53,24 @@ dist_gir_DATA = Ovf-0.1.gir
 typelibdir = $(libdir)/girepository-1.0/
 typelib_DATA = $(INTROSPECTION_GIRS:.gir=.typelib)
 
-CLEANFILES = $(dist_gir_DATA) $(typelib_DATA)
+CLEANFILES += $(dist_gir_DATA) $(typelib_DATA)
 endif # HAVE_INTROSPECTION
+
+if WITH_VALA
+vapidir = $(datadir)/vala/vapi
+vapi_DATA = ovf-0.1.vapi
+
+ovf-0.1.vapi: Ovf-0.1.gir
+	$(AM_V_GEN)$(VAPIGEN)			 \
+		--vapidir=$(builddir)		 \
+		--pkg gobject-2.0		 \
+		--pkg glib-2.0			 \
+		--pkg gio-2.0			 \
+		--library ovf-0.1		 \
+		--metadatadir=$(srcdir)		 \
+		$<
+
+CLEANFILES += ovf-0.1.vapi
+endif
 
 -include $(top_srcdir)/git.mk
