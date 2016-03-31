@@ -28,6 +28,8 @@ PKG_CHECK_MODULES(LIBOVF_GLIB, [
 	libxml-2.0
 ])
 
+GOBJECT_INTROSPECTION_CHECK([0.9.8])
+
 AC_CONFIG_FILES([
 Makefile
 libovf-glib/Makefile
