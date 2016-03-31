@@ -141,6 +141,16 @@ out:
 	return ret;
 }
 
+/**
+ * ovf_package_load_from_ova_file:
+ * @self: an #OvfPackage
+ * @filename: an .ova file name
+ * @error: a #GError or %NULL
+ *
+ * Loads an OVF package from a compressed .ova file.
+ *
+ * Returns: %TRUE if the operation succeeded
+ */
 gboolean
 ovf_package_load_from_ova_file (OvfPackage   *self,
                                 const gchar  *filename,
@@ -180,6 +190,16 @@ out:
 	return ret;
 }
 
+/**
+ * ovf_package_load_from_file:
+ * @self: an #OvfPackage
+ * @filename: an .ovf file name
+ * @error: a #GError or %NULL
+ *
+ * Loads an OVF package from an uncompressed .ovf file.
+ *
+ * Returns: %TRUE if the operation succeeded
+ */
 gboolean
 ovf_package_load_from_file (OvfPackage   *self,
                             const gchar  *filename,
@@ -197,6 +217,16 @@ ovf_package_load_from_file (OvfPackage   *self,
 	return ovf_package_load_from_data (self, data, length, error);
 }
 
+/**
+ * ovf_package_save_file:
+ * @self: an #OvfPackage
+ * @filename: an .ovf file name
+ * @error: a #GError or %NULL
+ *
+ * Saves the OVF package to an uncompressed .ovf file.
+ *
+ * Returns: %TRUE if the operation succeeded
+ */
 gboolean
 ovf_package_save_file (OvfPackage   *self,
                        const gchar  *filename,
@@ -327,6 +357,18 @@ out:
 
 	return g_steal_pointer (&disks);
 }
+
+/**
+ * ovf_package_load_from_data:
+ * @self: an #OvfPackage
+ * @data: OVF data
+ * @length: size of the OVF data
+ * @error: a #GError or %NULL
+ *
+ * Loads an OVF package from a memory buffer that holds an .ovf file.
+ *
+ * Returns: %TRUE if the operation succeeded
+ */
 gboolean
 ovf_package_load_from_data (OvfPackage   *self,
                             const gchar  *data,
@@ -404,8 +446,16 @@ out:
 	return ret;
 }
 
+/**
+ * ovf_package_get_disks:
+ * @self: an #OvfPackage
+ *
+ * Returns an array with all the disks associated with the OVF package.
+ *
+ * Returns: (element-type OvfDisk) (transfer full): an array
+ */
 GPtrArray *
-ovf_package_get_disks (OvfPackage  *self)
+ovf_package_get_disks (OvfPackage *self)
 {
 	if (self->disks == NULL)
 		return NULL;
@@ -413,6 +463,13 @@ ovf_package_get_disks (OvfPackage  *self)
 	return g_ptr_array_ref (self->disks);
 }
 
+/**
+ * ovf_package_new:
+ *
+ * Creates a new #OvfPackage.
+ *
+ * Returns: (transfer full): an #OvfPackage
+ */
 OvfPackage *
 ovf_package_new (void)
 {

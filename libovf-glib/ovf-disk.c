@@ -32,12 +32,27 @@ struct _OvfDisk
 
 G_DEFINE_TYPE (OvfDisk, ovf_disk, G_TYPE_OBJECT)
 
+/**
+ * ovf_disk_get_capacity:
+ * @self: an #OvfDisk
+ *
+ * Returns the disk's capacity.
+ *
+ * Returns: (transfer none): the capacity
+ */
 const gchar *
 ovf_disk_get_capacity (OvfDisk *self)
 {
 	return self->capacity;
 }
 
+/**
+ * ovf_disk_set_capacity:
+ * @self: an #OvfDisk
+ * @capacity: capacity for the disk
+ *
+ * Sets a new capacity for the disk.
+ */
 void
 ovf_disk_set_capacity (OvfDisk     *self,
                        const gchar *capacity)
@@ -46,12 +61,27 @@ ovf_disk_set_capacity (OvfDisk     *self,
 	self->capacity = g_strdup (capacity);
 }
 
+/**
+ * ovf_disk_get_disk_id:
+ * @self: an #OvfDisk
+ *
+ * Returns the disk id.
+ *
+ * Returns: (transfer none): the disk id
+ */
 const gchar *
 ovf_disk_get_disk_id (OvfDisk *self)
 {
 	return self->disk_id;
 }
 
+/**
+ * ovf_disk_set_disk_id:
+ * @self: an #OvfDisk
+ * @disk_id: disk id for the disk
+ *
+ * Sets a new disk id for the disk.
+ */
 void
 ovf_disk_set_disk_id (OvfDisk     *self,
                       const gchar *disk_id)
@@ -60,12 +90,27 @@ ovf_disk_set_disk_id (OvfDisk     *self,
 	self->disk_id = g_strdup (disk_id);
 }
 
+/**
+ * ovf_disk_get_file_ref:
+ * @self: an #OvfDisk
+ *
+ * Returns the disk's file reference.
+ *
+ * Returns: (transfer none): the file ref
+ */
 const gchar *
 ovf_disk_get_file_ref (OvfDisk *self)
 {
 	return self->file_ref;
 }
 
+/**
+ * ovf_disk_set_file_ref:
+ * @self: an #OvfDisk
+ * @file_ref: file ref for the disk
+ *
+ * Sets a new file reference for the disk.
+ */
 void
 ovf_disk_set_file_ref (OvfDisk     *self,
                        const gchar *file_ref)
@@ -74,12 +119,27 @@ ovf_disk_set_file_ref (OvfDisk     *self,
 	self->file_ref = g_strdup (file_ref);
 }
 
+/**
+ * ovf_disk_get_format:
+ * @self: an #OvfDisk
+ *
+ * Returns the disk's format.
+ *
+ * Returns: (transfer none): the format
+ */
 const gchar *
 ovf_disk_get_format (OvfDisk *self)
 {
 	return self->format;
 }
 
+/**
+ * ovf_disk_set_format:
+ * @self: an #OvfDisk
+ * @format: format for the disk
+ *
+ * Sets a new format for the disk.
+ */
 void
 ovf_disk_set_format (OvfDisk     *self,
                      const gchar *format)
@@ -88,6 +148,13 @@ ovf_disk_set_format (OvfDisk     *self,
 	self->format = g_strdup (format);
 }
 
+/**
+ * ovf_disk_new:
+ *
+ * Creates a new #OvfDisk.
+ *
+ * Returns: (transfer full): an #OvfDisk
+ */
 OvfDisk *
 ovf_disk_new (void)
 {
