@@ -32,6 +32,7 @@ GOBJECT_INTROSPECTION_CHECK([0.9.8])
 
 AC_CONFIG_FILES([
 Makefile
+libovf-glib-0.1.pc
 libovf-glib/Makefile
 tests/Makefile
 ])
