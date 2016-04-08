@@ -419,7 +419,7 @@ out:
 }
 
 static gchar *
-disk_filename_by_disk_id (xmlXPathContext *ctx, const gchar *disk_id)
+disk_filename_by_file_ref (xmlXPathContext *ctx, const gchar *file_ref)
 {
 	g_autofree gchar *xpath = NULL;
 	g_autoptr(GPtrArray) disks = NULL;
@@ -428,9 +428,9 @@ disk_filename_by_disk_id (xmlXPathContext *ctx, const gchar *disk_id)
 	xmlNode *node;
 	xmlXPathObject *obj;
 
-	g_assert (disk_id != NULL);
+	g_assert (file_ref != NULL);
 
-	xpath = g_strdup_printf (OVF_PATH_REFERENCES "/ovf:File[@ovf:id='%s']", disk_id);
+	xpath = g_strdup_printf (OVF_PATH_REFERENCES "/ovf:File[@ovf:id='%s']", file_ref);
 	obj = xmlXPathEval ((const xmlChar *) xpath, ctx);
 	if (obj == NULL ||
 	    obj->type != XPATH_NODESET ||
@@ -599,7 +599,7 @@ ovf_package_extract_disk_to_directory (OvfPackage   *self,
 		return FALSE;
 	}
 
-	filename = disk_filename_by_disk_id (self->ctx, file_ref);
+	filename = disk_filename_by_file_ref (self->ctx, file_ref);
 	if (filename == NULL || filename[0] == '\0') {
 		g_set_error (error,
 			     OVF_PACKAGE_ERROR,
