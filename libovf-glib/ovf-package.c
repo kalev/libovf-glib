@@ -20,8 +20,6 @@
 
 #include "ovf-package.h"
 
-#include "ovf-disk.h"
-
 #include <archive.h>
 #include <archive_entry.h>
 #include <glib/gstdio.h>
@@ -36,6 +34,7 @@ struct _OvfPackage
 
 	GPtrArray		 *disks;
 	xmlDoc			 *doc;
+	xmlXPathContext		 *ctx;
 };
 
 G_DEFINE_TYPE (OvfPackage, ovf_package, G_TYPE_OBJECT)
@@ -45,6 +44,7 @@ G_DEFINE_QUARK (ovf-package-error-quark, ovf_package_error)
 #define OVF_NS_ENVELOPE "http://schemas.dmtf.org/ovf/envelope/1"
 
 #define OVF_PATH_ENVELOPE "/ovf:Envelope[1]"
+#define OVF_PATH_REFERENCES OVF_PATH_ENVELOPE "/ovf:References"
 #define OVF_PATH_DISKSECTION OVF_PATH_ENVELOPE "/ovf:DiskSection"
 #define OVF_PATH_VIRTUALSYSTEM OVF_PATH_ENVELOPE "/ovf:VirtualSystem"
 #define OVF_PATH_OPERATINGSYSTEM OVF_PATH_VIRTUALSYSTEM "/ovf:OperatingSystemSection"
@@ -358,6 +358,44 @@ out:
 	return g_steal_pointer (&disks);
 }
 
+static gchar *
+disk_filename_by_disk_id (xmlXPathContext *ctx, const gchar *disk_id)
+{
+	g_autofree gchar *xpath = NULL;
+	g_autoptr(GPtrArray) disks = NULL;
+	gchar *ret = NULL;
+	xmlChar *str;
+	xmlNode *node;
+	xmlXPathObject *obj;
+
+	g_assert (disk_id != NULL);
+
+	xpath = g_strdup_printf (OVF_PATH_REFERENCES "/ovf:File[@ovf:id='%s']", disk_id);
+	obj = xmlXPathEval ((const xmlChar *) xpath, ctx);
+	if (obj == NULL ||
+	    obj->type != XPATH_NODESET ||
+	    obj->nodesetval == NULL ||
+	    obj->nodesetval->nodeNr != 1) {
+		goto out;
+	}
+
+	/* the query above should only ever return a single node for valid OVF files */
+	node = obj->nodesetval->nodeTab[0];
+
+	str = xmlGetNsProp (node,
+	                    (const xmlChar *) "href",
+	                    (const xmlChar *) OVF_NS_ENVELOPE);
+	ret = g_strdup ((const gchar *) str);
+	xmlFree (str);
+
+out:
+	if (obj != NULL)
+		xmlXPathFreeObject (obj);
+
+	return ret;
+}
+
+
 /**
  * ovf_package_load_from_data:
  * @self: an #OvfPackage
@@ -378,13 +416,12 @@ ovf_package_load_from_data (OvfPackage   *self,
 	g_autofree gchar *desc = NULL;
 	g_autofree gchar *name = NULL;
 	gboolean ret;
-	xmlXPathContext *ctx = NULL;
 
 	g_return_val_if_fail (OVF_IS_PACKAGE (self), FALSE);
 	g_return_val_if_fail (data != NULL, FALSE);
 
-	if (self->doc != NULL)
-		xmlFreeDoc (self->doc);
+	g_clear_pointer (&self->ctx, xmlXPathFreeContext);
+	g_clear_pointer (&self->doc, xmlFreeDoc);
 
 	self->doc = xmlParseMemory (data, length);
 	if (self->doc == NULL) {
@@ -396,12 +433,12 @@ ovf_package_load_from_data (OvfPackage   *self,
 		goto out;
 	}
 
-	ctx = xmlXPathNewContext (self->doc);
-	xmlXPathRegisterNs (ctx,
+	self->ctx = xmlXPathNewContext (self->doc);
+	xmlXPathRegisterNs (self->ctx,
 	                    (const xmlChar *) "ovf",
 	                    (const xmlChar *) "http://schemas.dmtf.org/ovf/envelope/1");
 
-	if (!xpath_section_exists (ctx, OVF_PATH_VIRTUALSYSTEM)) {
+	if (!xpath_section_exists (self->ctx, OVF_PATH_VIRTUALSYSTEM)) {
 		g_set_error (error,
 		             OVF_PACKAGE_ERROR,
 		             OVF_PACKAGE_ERROR_XML,
@@ -410,7 +447,7 @@ ovf_package_load_from_data (OvfPackage   *self,
 		goto out;
 	}
 
-	if (!xpath_section_exists (ctx, OVF_PATH_OPERATINGSYSTEM)) {
+	if (!xpath_section_exists (self->ctx, OVF_PATH_OPERATINGSYSTEM)) {
 		g_set_error (error,
 		             OVF_PACKAGE_ERROR,
 		             OVF_PACKAGE_ERROR_XML,
@@ -419,7 +456,7 @@ ovf_package_load_from_data (OvfPackage   *self,
 		goto out;
 	}
 
-	if (!xpath_section_exists (ctx, OVF_PATH_VIRTUALHARDWARE)) {
+	if (!xpath_section_exists (self->ctx, OVF_PATH_VIRTUALHARDWARE)) {
 		g_set_error (error,
 		             OVF_PACKAGE_ERROR,
 		             OVF_PACKAGE_ERROR_XML,
@@ -428,20 +465,18 @@ ovf_package_load_from_data (OvfPackage   *self,
 		goto out;
 	}
 
-	name = xpath_str (ctx, OVF_PATH_VIRTUALSYSTEM "/ovf:Name");
-	desc = xpath_str (ctx, OVF_PATH_VIRTUALSYSTEM "/ovf:AnnotationSection/ovf:Annotation");
+	name = xpath_str (self->ctx, OVF_PATH_VIRTUALSYSTEM "/ovf:Name");
+	desc = xpath_str (self->ctx, OVF_PATH_VIRTUALSYSTEM "/ovf:AnnotationSection/ovf:Annotation");
 
 	g_debug ("name: %s, desc: %s", name, desc);
 
 	if (self->disks != NULL)
 		g_ptr_array_free (self->disks, TRUE);
 
-	self->disks = parse_disks (ctx);
+	self->disks = parse_disks (self->ctx);
 
 	ret = TRUE;
 out:
-	if (ctx != NULL)
-		xmlXPathFreeContext (ctx);
 
 	return ret;
 }
@@ -464,6 +499,51 @@ ovf_package_get_disks (OvfPackage *self)
 }
 
 /**
+ * ovf_package_extract_disk_to_directory:
+ * @self: an #OvfPackage
+ * @disk: an #OvfDisk to extract
+ * @directory: directory to extract to
+ * @error: a #GError or %NULL
+ *
+ * Extracts a disk image to the specified directory.
+ *
+ * Returns: %TRUE if the operation succeeded
+ */
+gboolean
+ovf_package_extract_disk_to_directory (OvfPackage   *self,
+                                       OvfDisk      *disk,
+                                       const gchar  *directory,
+                                       GError      **error)
+{
+	const gchar *disk_id;
+	g_autofree gchar *filename = NULL;
+
+	g_return_val_if_fail (OVF_IS_PACKAGE (self), FALSE);
+	g_return_val_if_fail (OVF_IS_DISK (disk), FALSE);
+	g_return_val_if_fail (directory != NULL, FALSE);
+
+	disk_id = ovf_disk_get_disk_id (disk);
+	if (disk_id == NULL || disk_id[0] == '\0') {
+		g_set_error (error,
+			     OVF_PACKAGE_ERROR,
+			     OVF_PACKAGE_ERROR_FAILED,
+			     "Disk is missing a disk id");
+		return FALSE;
+	}
+
+	filename = disk_filename_by_disk_id (self->ctx, disk_id);
+	if (filename == NULL || filename[0] == '\0') {
+		g_set_error (error,
+			     OVF_PACKAGE_ERROR,
+			     OVF_PACKAGE_ERROR_FAILED,
+			     "Could not find a filename for a disk");
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+/**
  * ovf_package_new:
  *
  * Creates a new #OvfPackage.
@@ -483,6 +563,8 @@ ovf_package_finalize (GObject *object)
 
 	if (self->disks != NULL)
 		g_ptr_array_free (self->disks, TRUE);
+	if (self->ctx != NULL)
+		xmlXPathFreeContext (self->ctx);
 	if (self->doc != NULL)
 		xmlFreeDoc (self->doc);
 

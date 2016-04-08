@@ -21,6 +21,8 @@
 #ifndef __OVF_PACKAGE_H__
 #define __OVF_PACKAGE_H__
 
+#include "ovf-disk.h"
+
 #include <gio/gio.h>
 #include <glib.h>
 #include <glib-object.h>
@@ -57,6 +59,10 @@ gboolean		  ovf_package_save_file			(OvfPackage		 *self,
 								 const gchar		 *filename,
 								 GError			**error);
 GPtrArray		 *ovf_package_get_disks			(OvfPackage		 *self);
+gboolean		  ovf_package_extract_disk_to_directory	(OvfPackage		 *self,
+								 OvfDisk		 *disk,
+								 const gchar		 *directory,
+								 GError			**error);
 
 G_END_DECLS
 
