@@ -526,6 +526,8 @@ ovf_package_load_from_data (OvfPackage   *self,
 	}
 
 	name = xpath_str (self->ctx, OVF_PATH_VIRTUALSYSTEM "/ovf:Name");
+	if (name == NULL)
+		name = xpath_str (self->ctx, OVF_PATH_VIRTUALSYSTEM "/@ovf:id");
 	desc = xpath_str (self->ctx, OVF_PATH_VIRTUALSYSTEM "/ovf:AnnotationSection/ovf:Annotation");
 
 	g_debug ("name: %s, desc: %s", name, desc);
