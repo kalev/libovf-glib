@@ -422,37 +422,11 @@ static gchar *
 disk_filename_by_file_ref (xmlXPathContext *ctx, const gchar *file_ref)
 {
 	g_autofree gchar *xpath = NULL;
-	g_autoptr(GPtrArray) disks = NULL;
-	gchar *ret = NULL;
-	xmlChar *str;
-	xmlNode *node;
-	xmlXPathObject *obj;
 
 	g_assert (file_ref != NULL);
 
-	xpath = g_strdup_printf (OVF_PATH_REFERENCES "/ovf:File[@ovf:id='%s']", file_ref);
-	obj = xmlXPathEval ((const xmlChar *) xpath, ctx);
-	if (obj == NULL ||
-	    obj->type != XPATH_NODESET ||
-	    obj->nodesetval == NULL ||
-	    obj->nodesetval->nodeNr != 1) {
-		goto out;
-	}
-
-	/* the query above should only ever return a single node for valid OVF files */
-	node = obj->nodesetval->nodeTab[0];
-
-	str = xmlGetNsProp (node,
-	                    (const xmlChar *) "href",
-	                    (const xmlChar *) OVF_NS_ENVELOPE);
-	ret = g_strdup ((const gchar *) str);
-	xmlFree (str);
-
-out:
-	if (obj != NULL)
-		xmlXPathFreeObject (obj);
-
-	return ret;
+	xpath = g_strdup_printf (OVF_PATH_REFERENCES "/ovf:File[@ovf:id='%s']/@ovf:href", file_ref);
+	return xpath_str (ctx, xpath);
 }
 
 
