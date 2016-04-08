@@ -18,6 +18,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
+#include <glib/gstdio.h>
 #include <libovf-glib/ovf-disk.h>
 #include <libovf-glib/ovf-package.h>
 
@@ -120,6 +121,39 @@ test_get_disks (void)
 	g_assert_cmpstr (disk_id, ==, "vmdisk2");
 }
 
+static void
+test_extract_disk (void)
+{
+	g_autofree gchar *tmp_dir = NULL;
+	g_autofree gchar *filename = NULL;
+	g_autoptr(GError) error = NULL;
+	g_autoptr(GPtrArray) ovf_disks = NULL;
+	g_autoptr(OvfPackage) ovf_package = NULL;
+
+	ovf_package = ovf_package_new ();
+	ovf_package_load_from_ova_file (ovf_package,
+	                                g_test_get_filename (G_TEST_DIST, "Fedora_23.ova", NULL),
+	                                &error);
+	g_assert_no_error (error);
+
+	ovf_disks = ovf_package_get_disks (ovf_package);
+	g_assert (ovf_disks != NULL);
+	g_assert (ovf_disks->len == 1);
+
+	tmp_dir = g_dir_make_tmp ("libovf-glib-test-XXXXXX", &error);
+	g_assert_no_error (error);
+
+	ovf_package_extract_disk_to_directory (ovf_package,
+	                                       (OvfDisk *) g_ptr_array_index (ovf_disks, 0),
+	                                       tmp_dir,
+	                                       &error);
+	g_assert_no_error (error);
+
+	filename = g_build_filename (tmp_dir, "Fedora 23-disk2.vmdk", NULL);
+	g_assert (g_file_test (filename, G_FILE_TEST_EXISTS));
+	g_unlink (filename);
+}
+
 int
 main (int   argc,
       char *argv[])
@@ -132,6 +166,7 @@ main (int   argc,
 	g_test_add_func ("/parser/load-valid-ova", test_load_valid_ova);
 	g_test_add_func ("/parser/save-ovf", test_save_ovf);
 	g_test_add_func ("/parser/get-disks", test_get_disks);
+	g_test_add_func ("/parser/extract-disk", test_extract_disk);
 
 	return g_test_run ();
 }

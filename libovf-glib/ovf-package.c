@@ -22,6 +22,8 @@
 
 #include <archive.h>
 #include <archive_entry.h>
+#include <fcntl.h>
+#include <glib.h>
 #include <glib/gstdio.h>
 #include <libxml/parser.h>
 #include <libxml/xpath.h>
@@ -32,6 +34,7 @@ struct _OvfPackage
 {
 	GObject			  parent_instance;
 
+	gchar			 *ova_filename;
 	GPtrArray		 *disks;
 	xmlDoc			 *doc;
 	xmlXPathContext		 *ctx;
@@ -63,9 +66,10 @@ endswith (const gchar *str, const gchar *search)
 }
 
 static gboolean
-extract_ovf_to_fd (const gchar  *ova_filename,
-                   gint          out_fd,
-                   GError      **error)
+ova_extract_file_to_fd (const gchar  *ova_filename,
+                        const gchar  *extract_filename,
+                        gint          out_fd,
+                        GError      **error)
 {
 	gboolean found;
 	gboolean ret = TRUE;
@@ -87,7 +91,7 @@ extract_ovf_to_fd (const gchar  *ova_filename,
 		goto out;
 	}
 
-	/* find first .ovf file and extract it */
+	/* find first matching file and extract it */
 	found = FALSE;
 	for (;;) {
 		g_autofree gchar *buf = NULL;
@@ -107,9 +111,9 @@ extract_ovf_to_fd (const gchar  *ova_filename,
 			goto out;
 		}
 
-		/* did we find an .ovf file? */
+		/* did we find a match? */
 		name = archive_entry_pathname (entry);
-		if (name != NULL && endswith (name, ".ovf")) {
+		if (name != NULL && endswith (name, extract_filename)) {
 			r = archive_read_data_into_fd (a, out_fd);
 			if (r != ARCHIVE_OK) {
 				g_set_error (error,
@@ -129,7 +133,8 @@ extract_ovf_to_fd (const gchar  *ova_filename,
 		g_set_error (error,
 		             OVF_PACKAGE_ERROR,
 		             OVF_PACKAGE_ERROR_NOT_FOUND,
-		             "Could not find any .ovf files");
+		             "Could not find any %s files",
+		             extract_filename);
 		ret = FALSE;
 	}
 
@@ -138,6 +143,58 @@ out:
 		archive_read_close (a);
 		archive_read_free (a);
 	}
+	return ret;
+}
+
+static gboolean
+ova_extract_file_to_directory (const gchar  *ova_filename,
+                               const gchar  *extract_filename,
+                               const gchar  *directory,
+                               GError      **error)
+{
+	g_autofree gchar *fn = NULL;
+	gboolean ret = TRUE;
+	gint fd = -1;
+
+	/* create directory */
+	if (g_mkdir_with_parents (directory, 0) != 0) {
+		g_set_error (error,
+		             OVF_PACKAGE_ERROR,
+		             OVF_PACKAGE_ERROR_FAILED,
+		             "Failed to create directory: %s",
+		             directory);
+		ret = FALSE;
+		goto out;
+	}
+
+	fn = g_build_filename (directory, extract_filename, NULL);
+	fd = g_open (fn, O_WRONLY | O_CREAT, 0);
+	if (fd == -1) {
+		g_set_error (error,
+		             OVF_PACKAGE_ERROR,
+		             OVF_PACKAGE_ERROR_FAILED,
+		             "Failed to open file for writing: %s",
+		             fn);
+		ret = FALSE;
+		goto out;
+	}
+
+
+	if (!ova_extract_file_to_fd (ova_filename, extract_filename, fd, error)) {
+		g_set_error (error,
+		             OVF_PACKAGE_ERROR,
+		             OVF_PACKAGE_ERROR_FAILED,
+		             "Failed to extract %s from %s",
+		             extract_filename,
+		             ova_filename);
+		ret = FALSE;
+		goto out;
+	}
+
+out:
+	if (fd != -1)
+		close (fd);
+
 	return ret;
 }
 
@@ -163,6 +220,9 @@ ovf_package_load_from_ova_file (OvfPackage   *self,
 	g_return_val_if_fail (OVF_IS_PACKAGE (self), FALSE);
 	g_return_val_if_fail (filename != NULL, FALSE);
 
+	g_free (self->ova_filename);
+	self->ova_filename = g_strdup (filename);
+
 	/* open a temporary file */
 	tmp_fd = g_file_open_tmp ("ovf-package-XXXXXX.ovf", &tmp_path, error);
 	if (tmp_fd == -1) {
@@ -171,7 +231,7 @@ ovf_package_load_from_ova_file (OvfPackage   *self,
 	}
 
 	/* extract an .ovf file */
-	if (!extract_ovf_to_fd (filename, tmp_fd, error)) {
+	if (!ova_extract_file_to_fd (self->ova_filename, ".ovf", tmp_fd, error)) {
 		ret = FALSE;
 		goto out;
 	}
@@ -515,28 +575,43 @@ ovf_package_extract_disk_to_directory (OvfPackage   *self,
                                        const gchar  *directory,
                                        GError      **error)
 {
-	const gchar *disk_id;
+	const gchar *file_ref;
 	g_autofree gchar *filename = NULL;
 
 	g_return_val_if_fail (OVF_IS_PACKAGE (self), FALSE);
 	g_return_val_if_fail (OVF_IS_DISK (disk), FALSE);
 	g_return_val_if_fail (directory != NULL, FALSE);
 
-	disk_id = ovf_disk_get_disk_id (disk);
-	if (disk_id == NULL || disk_id[0] == '\0') {
+	if (self->ova_filename == NULL) {
 		g_set_error (error,
 			     OVF_PACKAGE_ERROR,
 			     OVF_PACKAGE_ERROR_FAILED,
-			     "Disk is missing a disk id");
+			     "No OVA package specified");
 		return FALSE;
 	}
 
-	filename = disk_filename_by_disk_id (self->ctx, disk_id);
+	file_ref = ovf_disk_get_file_ref (disk);
+	if (file_ref == NULL || file_ref[0] == '\0') {
+		g_set_error (error,
+			     OVF_PACKAGE_ERROR,
+			     OVF_PACKAGE_ERROR_FAILED,
+			     "Disk is missing a file ref");
+		return FALSE;
+	}
+
+	filename = disk_filename_by_disk_id (self->ctx, file_ref);
 	if (filename == NULL || filename[0] == '\0') {
 		g_set_error (error,
 			     OVF_PACKAGE_ERROR,
 			     OVF_PACKAGE_ERROR_FAILED,
 			     "Could not find a filename for a disk");
+		return FALSE;
+	}
+
+	if (!ova_extract_file_to_directory (self->ova_filename,
+	                                    filename,
+	                                    directory,
+	                                    error)) {
 		return FALSE;
 	}
 
@@ -567,6 +642,8 @@ ovf_package_finalize (GObject *object)
 		xmlXPathFreeContext (self->ctx);
 	if (self->doc != NULL)
 		xmlFreeDoc (self->doc);
+
+	g_free (self->ova_filename);
 
 	G_OBJECT_CLASS (ovf_package_parent_class)->finalize (object);
 }
