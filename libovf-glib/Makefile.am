@@ -28,6 +28,9 @@ libovf_glib_0_1_la_SOURCES = 	\
 	$(H_FILES)		\
 	$(C_FILES)
 
+headerdir = $(prefix)/include/libovf-glib-0.1/libovf-glib
+header_DATA = $(H_FILES)
+
 # introspection
 -include $(INTROSPECTION_MAKEFILE)
 
