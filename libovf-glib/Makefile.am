@@ -61,19 +61,19 @@ endif # HAVE_INTROSPECTION
 
 if WITH_VALA
 vapidir = $(datadir)/vala/vapi
-vapi_DATA = ovf-0.1.vapi
+vapi_DATA = libovf-glib-0.1.vapi
 
-ovf-0.1.vapi: Ovf-0.1.gir
+libovf-glib-0.1.vapi: Ovf-0.1.gir
 	$(AM_V_GEN)$(VAPIGEN)			 \
 		--vapidir=$(builddir)		 \
 		--pkg gobject-2.0		 \
 		--pkg glib-2.0			 \
 		--pkg gio-2.0			 \
-		--library ovf-0.1		 \
+		--library libovf-glib-0.1	 \
 		--metadatadir=$(srcdir)		 \
 		$<
 
-CLEANFILES += ovf-0.1.vapi
+CLEANFILES += libovf-glib-0.1.vapi
 endif
 
 -include $(top_srcdir)/git.mk
