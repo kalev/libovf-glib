@@ -155,7 +155,7 @@ ova_extract_file_to_path (const gchar  *ova_filename,
 	gboolean ret = TRUE;
 	gint fd = -1;
 
-	fd = g_open (save_path, O_WRONLY | O_CREAT, 0);
+	fd = g_open (save_path, O_WRONLY | O_CREAT, 0666);
 	if (fd == -1) {
 		g_set_error (error,
 		             OVF_PACKAGE_ERROR,
