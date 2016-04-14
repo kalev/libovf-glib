@@ -59,9 +59,9 @@ gboolean		  ovf_package_save_file			(OvfPackage		 *self,
 								 const gchar		 *filename,
 								 GError			**error);
 GPtrArray		 *ovf_package_get_disks			(OvfPackage		 *self);
-gboolean		  ovf_package_extract_disk_to_directory	(OvfPackage		 *self,
+gboolean		  ovf_package_extract_disk		(OvfPackage		 *self,
 								 OvfDisk		 *disk,
-								 const gchar		 *directory,
+								 const gchar		 *save_path,
 								 GError			**error);
 
 G_END_DECLS

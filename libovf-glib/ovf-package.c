@@ -147,34 +147,21 @@ out:
 }
 
 static gboolean
-ova_extract_file_to_directory (const gchar  *ova_filename,
-                               const gchar  *extract_filename,
-                               const gchar  *directory,
-                               GError      **error)
+ova_extract_file_to_path (const gchar  *ova_filename,
+                          const gchar  *extract_filename,
+                          const gchar  *save_path,
+                          GError      **error)
 {
-	g_autofree gchar *fn = NULL;
 	gboolean ret = TRUE;
 	gint fd = -1;
 
-	/* create directory */
-	if (g_mkdir_with_parents (directory, 0) != 0) {
-		g_set_error (error,
-		             OVF_PACKAGE_ERROR,
-		             OVF_PACKAGE_ERROR_FAILED,
-		             "Failed to create directory: %s",
-		             directory);
-		ret = FALSE;
-		goto out;
-	}
-
-	fn = g_build_filename (directory, extract_filename, NULL);
-	fd = g_open (fn, O_WRONLY | O_CREAT, 0);
+	fd = g_open (save_path, O_WRONLY | O_CREAT, 0);
 	if (fd == -1) {
 		g_set_error (error,
 		             OVF_PACKAGE_ERROR,
 		             OVF_PACKAGE_ERROR_FAILED,
 		             "Failed to open file for writing: %s",
-		             fn);
+		             save_path);
 		ret = FALSE;
 		goto out;
 	}
@@ -535,28 +522,28 @@ ovf_package_get_disks (OvfPackage *self)
 }
 
 /**
- * ovf_package_extract_disk_to_directory:
+ * ovf_package_extract_disk:
  * @self: an #OvfPackage
  * @disk: an #OvfDisk to extract
- * @directory: directory to extract to
+ * @save_path: full path to extract to
  * @error: a #GError or %NULL
  *
- * Extracts a disk image to the specified directory.
+ * Extracts a disk image to the specified path.
  *
  * Returns: %TRUE if the operation succeeded
  */
 gboolean
-ovf_package_extract_disk_to_directory (OvfPackage   *self,
-                                       OvfDisk      *disk,
-                                       const gchar  *directory,
-                                       GError      **error)
+ovf_package_extract_disk (OvfPackage   *self,
+                          OvfDisk      *disk,
+                          const gchar  *save_path,
+                          GError      **error)
 {
 	const gchar *file_ref;
 	g_autofree gchar *filename = NULL;
 
 	g_return_val_if_fail (OVF_IS_PACKAGE (self), FALSE);
 	g_return_val_if_fail (OVF_IS_DISK (disk), FALSE);
-	g_return_val_if_fail (directory != NULL, FALSE);
+	g_return_val_if_fail (save_path != NULL, FALSE);
 
 	if (self->ova_filename == NULL) {
 		g_set_error (error,
@@ -584,10 +571,10 @@ ovf_package_extract_disk_to_directory (OvfPackage   *self,
 		return FALSE;
 	}
 
-	if (!ova_extract_file_to_directory (self->ova_filename,
-	                                    filename,
-	                                    directory,
-	                                    error)) {
+	if (!ova_extract_file_to_path (self->ova_filename,
+	                               filename,
+	                               save_path,
+	                               error)) {
 		return FALSE;
 	}
 

@@ -143,13 +143,13 @@ test_extract_disk (void)
 	tmp_dir = g_dir_make_tmp ("libovf-glib-test-XXXXXX", &error);
 	g_assert_no_error (error);
 
-	ovf_package_extract_disk_to_directory (ovf_package,
-	                                       (OvfDisk *) g_ptr_array_index (ovf_disks, 0),
-	                                       tmp_dir,
-	                                       &error);
+	filename = g_build_filename (tmp_dir, "extracted disk.vmdk", NULL);
+	ovf_package_extract_disk (ovf_package,
+	                          (OvfDisk *) g_ptr_array_index (ovf_disks, 0),
+	                          filename,
+	                          &error);
 	g_assert_no_error (error);
 
-	filename = g_build_filename (tmp_dir, "Fedora 23-disk2.vmdk", NULL);
 	g_assert (g_file_test (filename, G_FILE_TEST_EXISTS));
 	g_unlink (filename);
 }
