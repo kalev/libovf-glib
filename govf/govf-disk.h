@@ -18,10 +18,31 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#ifndef __OVF_H__
-#define __OVF_H__
+#ifndef __GOVF_DISK_H__
+#define __GOVF_DISK_H__
 
-#include <libovf-glib/ovf-disk.h>
-#include <libovf-glib/ovf-package.h>
+#include <glib-object.h>
 
-#endif /* __OVF_H__ */
+G_BEGIN_DECLS
+
+#define GOVF_TYPE_DISK (govf_disk_get_type ())
+G_DECLARE_FINAL_TYPE (GovfDisk, govf_disk, GOVF, DISK, GObject)
+
+GovfDisk		 *govf_disk_new				(void);
+const gchar		 *govf_disk_get_capacity		(GovfDisk	 *self);
+void			  govf_disk_set_capacity		(GovfDisk	 *self,
+								 const gchar	 *capacity);
+const gchar		 *govf_disk_get_disk_id			(GovfDisk	 *self);
+void			  govf_disk_set_disk_id			(GovfDisk	 *self,
+								 const gchar	 *disk_id);
+const gchar		 *govf_disk_get_file_ref		(GovfDisk	 *self);
+void			  govf_disk_set_file_ref		(GovfDisk	 *self,
+								 const gchar	 *file_ref);
+const gchar		 *govf_disk_get_format			(GovfDisk	 *self);
+void			  govf_disk_set_format			(GovfDisk	 *self,
+								 const gchar	 *format);
+
+G_END_DECLS
+
+#endif /* __GOVF_DISK_H__ */
+

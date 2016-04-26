@@ -1,9 +1,9 @@
-SUBDIRS = libovf-glib tests
+SUBDIRS = govf tests
 
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = libovf-glib-0.1.pc
+pkgconfig_DATA = libgovf.pc
 
-EXTRA_DIST=libovf-glib-0.1.pc.in
+EXTRA_DIST=libgovf.pc.in
 
 DISTCHECK_CONFIGURE_FLAGS = --enable-introspection
 

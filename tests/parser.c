@@ -19,23 +19,23 @@
  */
 
 #include <glib/gstdio.h>
-#include <libovf-glib/ovf-disk.h>
-#include <libovf-glib/ovf-package.h>
+#include <govf/govf-disk.h>
+#include <govf/govf-package.h>
 
 static void
 test_init_parser (void)
 {
-	g_autoptr(OvfPackage) ovf_package = NULL;
+	g_autoptr(GovfPackage) ovf_package = NULL;
 
-	ovf_package = ovf_package_new ();
-	g_assert (OVF_IS_PACKAGE (ovf_package));
+	ovf_package = govf_package_new ();
+	g_assert (GOVF_IS_PACKAGE (ovf_package));
 }
 
 static void
 test_missing_sections (void)
 {
 	g_autoptr(GError) error = NULL;
-	g_autoptr(OvfPackage) ovf_package = NULL;
+	g_autoptr(GovfPackage) ovf_package = NULL;
 	gchar data[] =
 "<?xml version=\"1.0\"?>"
 "<Envelope ovf:version=\"1.0\" xml:lang=\"en-US\" xmlns=\"http://schemas.dmtf.org/ovf/envelope/1\" xmlns:ovf=\"http://schemas.dmtf.org/ovf/envelope/1\">"
@@ -43,21 +43,21 @@ test_missing_sections (void)
 "  </VirtualSystem>"
 "</Envelope>";
 
-	ovf_package = ovf_package_new ();
-	ovf_package_load_from_data (ovf_package, data, -1, &error);
-	g_assert_error (error, OVF_PACKAGE_ERROR, OVF_PACKAGE_ERROR_XML);
+	ovf_package = govf_package_new ();
+	govf_package_load_from_data (ovf_package, data, -1, &error);
+	g_assert_error (error, GOVF_PACKAGE_ERROR, GOVF_PACKAGE_ERROR_XML);
 }
 
 static void
 test_load_valid_ovf (void)
 {
 	g_autoptr(GError) error = NULL;
-	g_autoptr(OvfPackage) ovf_package = NULL;
+	g_autoptr(GovfPackage) ovf_package = NULL;
 
-	ovf_package = ovf_package_new ();
-	ovf_package_load_from_file (ovf_package,
-	                            g_test_get_filename (G_TEST_DIST, "Fedora_23.ovf", NULL),
-	                            &error);
+	ovf_package = govf_package_new ();
+	govf_package_load_from_file (ovf_package,
+	                             g_test_get_filename (G_TEST_DIST, "Fedora_23.ovf", NULL),
+	                             &error);
 	g_assert_no_error (error);
 }
 
@@ -65,12 +65,12 @@ static void
 test_load_valid_ova (void)
 {
 	g_autoptr(GError) error = NULL;
-	g_autoptr(OvfPackage) ovf_package = NULL;
+	g_autoptr(GovfPackage) ovf_package = NULL;
 
-	ovf_package = ovf_package_new ();
-	ovf_package_load_from_ova_file (ovf_package,
-	                                g_test_get_filename (G_TEST_DIST, "Fedora_23.ova", NULL),
-	                                &error);
+	ovf_package = govf_package_new ();
+	govf_package_load_from_ova_file (ovf_package,
+	                                 g_test_get_filename (G_TEST_DIST, "Fedora_23.ova", NULL),
+	                                 &error);
 	g_assert_no_error (error);
 }
 
@@ -79,18 +79,18 @@ test_save_ovf (void)
 {
 	g_autofree gchar *contents = NULL;
 	g_autoptr(GError) error = NULL;
-	g_autoptr(OvfPackage) ovf_package = NULL;
+	g_autoptr(GovfPackage) ovf_package = NULL;
 	gsize length = 0;
 
 	/* first load in an ovf file */
-	ovf_package = ovf_package_new ();
-	ovf_package_load_from_file (ovf_package,
-	                            g_test_get_filename (G_TEST_DIST, "Fedora_23.ovf", NULL),
-	                            &error);
+	ovf_package = govf_package_new ();
+	govf_package_load_from_file (ovf_package,
+	                             g_test_get_filename (G_TEST_DIST, "Fedora_23.ovf", NULL),
+	                             &error);
 	g_assert_no_error (error);
 
 	/* save it back to disk */
-	ovf_package_save_file (ovf_package, "/tmp/Fedora_23.ovf", &error);
+	govf_package_save_file (ovf_package, "/tmp/Fedora_23.ovf", &error);
 	g_assert_no_error (error);
 
 	/* make sure it's not 0 bytes */
@@ -104,20 +104,20 @@ test_get_disks (void)
 {
 	g_autoptr(GError) error = NULL;
 	g_autoptr(GPtrArray) ovf_disks = NULL;
-	g_autoptr(OvfPackage) ovf_package = NULL;
+	g_autoptr(GovfPackage) ovf_package = NULL;
 	const gchar *disk_id;
 
-	ovf_package = ovf_package_new ();
-	ovf_package_load_from_file (ovf_package,
-	                            g_test_get_filename (G_TEST_DIST, "Fedora_23.ovf", NULL),
-	                            &error);
+	ovf_package = govf_package_new ();
+	govf_package_load_from_file (ovf_package,
+	                             g_test_get_filename (G_TEST_DIST, "Fedora_23.ovf", NULL),
+	                             &error);
 	g_assert_no_error (error);
 
-	ovf_disks = ovf_package_get_disks (ovf_package);
+	ovf_disks = govf_package_get_disks (ovf_package);
 	g_assert (ovf_disks != NULL);
 	g_assert (ovf_disks->len == 1);
 
-	disk_id = ovf_disk_get_disk_id ((OvfDisk *) g_ptr_array_index (ovf_disks, 0));
+	disk_id = govf_disk_get_disk_id ((GovfDisk *) g_ptr_array_index (ovf_disks, 0));
 	g_assert_cmpstr (disk_id, ==, "vmdisk2");
 }
 
@@ -128,26 +128,26 @@ test_extract_disk (void)
 	g_autofree gchar *filename = NULL;
 	g_autoptr(GError) error = NULL;
 	g_autoptr(GPtrArray) ovf_disks = NULL;
-	g_autoptr(OvfPackage) ovf_package = NULL;
+	g_autoptr(GovfPackage) ovf_package = NULL;
 
-	ovf_package = ovf_package_new ();
-	ovf_package_load_from_ova_file (ovf_package,
-	                                g_test_get_filename (G_TEST_DIST, "Fedora_23.ova", NULL),
-	                                &error);
+	ovf_package = govf_package_new ();
+	govf_package_load_from_ova_file (ovf_package,
+	                                 g_test_get_filename (G_TEST_DIST, "Fedora_23.ova", NULL),
+	                                 &error);
 	g_assert_no_error (error);
 
-	ovf_disks = ovf_package_get_disks (ovf_package);
+	ovf_disks = govf_package_get_disks (ovf_package);
 	g_assert (ovf_disks != NULL);
 	g_assert (ovf_disks->len == 1);
 
-	tmp_dir = g_dir_make_tmp ("libovf-glib-test-XXXXXX", &error);
+	tmp_dir = g_dir_make_tmp ("libgovf-test-XXXXXX", &error);
 	g_assert_no_error (error);
 
 	filename = g_build_filename (tmp_dir, "extracted disk.vmdk", NULL);
-	ovf_package_extract_disk (ovf_package,
-	                          (OvfDisk *) g_ptr_array_index (ovf_disks, 0),
-	                          filename,
-	                          &error);
+	govf_package_extract_disk (ovf_package,
+	                           (GovfDisk *) g_ptr_array_index (ovf_disks, 0),
+	                           filename,
+	                           &error);
 	g_assert_no_error (error);
 
 	g_assert (g_file_test (filename, G_FILE_TEST_EXISTS));

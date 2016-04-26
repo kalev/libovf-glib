@@ -18,7 +18,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#include "ovf-package.h"
+#include "govf-package.h"
 
 #include <archive.h>
 #include <archive_entry.h>
@@ -30,7 +30,7 @@
 #include <libxml/xpathInternals.h>
 #include <string.h>
 
-struct _OvfPackage
+struct _GovfPackage
 {
 	GObject			  parent_instance;
 
@@ -40,9 +40,9 @@ struct _OvfPackage
 	xmlXPathContext		 *ctx;
 };
 
-G_DEFINE_TYPE (OvfPackage, ovf_package, G_TYPE_OBJECT)
+G_DEFINE_TYPE (GovfPackage, govf_package, G_TYPE_OBJECT)
 
-G_DEFINE_QUARK (ovf-package-error-quark, ovf_package_error)
+G_DEFINE_QUARK (govf-package-error-quark, govf_package_error)
 
 #define OVF_NS_ENVELOPE "http://schemas.dmtf.org/ovf/envelope/1"
 
@@ -83,10 +83,10 @@ ova_extract_file_to_fd (const gchar  *ova_filename,
 	r = archive_read_open_filename (a, ova_filename, 10240);
 	if (r != ARCHIVE_OK) {
 		g_set_error (error,
-			     OVF_PACKAGE_ERROR,
-			     OVF_PACKAGE_ERROR_FAILED,
-			     "Cannot open: %s",
-			     archive_error_string (a));
+		             GOVF_PACKAGE_ERROR,
+		             GOVF_PACKAGE_ERROR_FAILED,
+		             "Cannot open: %s",
+		             archive_error_string (a));
 		ret = FALSE;
 		goto out;
 	}
@@ -103,8 +103,8 @@ ova_extract_file_to_fd (const gchar  *ova_filename,
 			break;
 		if (r != ARCHIVE_OK) {
 			g_set_error (error,
-			             OVF_PACKAGE_ERROR,
-			             OVF_PACKAGE_ERROR_FAILED,
+			             GOVF_PACKAGE_ERROR,
+			             GOVF_PACKAGE_ERROR_FAILED,
 			             "Cannot read header: %s",
 			             archive_error_string (a));
 			ret = FALSE;
@@ -117,8 +117,8 @@ ova_extract_file_to_fd (const gchar  *ova_filename,
 			r = archive_read_data_into_fd (a, out_fd);
 			if (r != ARCHIVE_OK) {
 				g_set_error (error,
-				             OVF_PACKAGE_ERROR,
-				             OVF_PACKAGE_ERROR_FAILED,
+				             GOVF_PACKAGE_ERROR,
+				             GOVF_PACKAGE_ERROR_FAILED,
 				             "Cannot extract: %s",
 				             archive_error_string (a));
 				ret = FALSE;
@@ -131,8 +131,8 @@ ova_extract_file_to_fd (const gchar  *ova_filename,
 
 	if (!found) {
 		g_set_error (error,
-		             OVF_PACKAGE_ERROR,
-		             OVF_PACKAGE_ERROR_NOT_FOUND,
+		             GOVF_PACKAGE_ERROR,
+		             GOVF_PACKAGE_ERROR_NOT_FOUND,
 		             "Could not find any %s files",
 		             extract_filename);
 		ret = FALSE;
@@ -158,8 +158,8 @@ ova_extract_file_to_path (const gchar  *ova_filename,
 	fd = g_open (save_path, O_WRONLY | O_CREAT, 0666);
 	if (fd == -1) {
 		g_set_error (error,
-		             OVF_PACKAGE_ERROR,
-		             OVF_PACKAGE_ERROR_FAILED,
+		             GOVF_PACKAGE_ERROR,
+		             GOVF_PACKAGE_ERROR_FAILED,
 		             "Failed to open file for writing: %s",
 		             save_path);
 		ret = FALSE;
@@ -169,8 +169,8 @@ ova_extract_file_to_path (const gchar  *ova_filename,
 
 	if (!ova_extract_file_to_fd (ova_filename, extract_filename, fd, error)) {
 		g_set_error (error,
-		             OVF_PACKAGE_ERROR,
-		             OVF_PACKAGE_ERROR_FAILED,
+		             GOVF_PACKAGE_ERROR,
+		             GOVF_PACKAGE_ERROR_FAILED,
 		             "Failed to extract %s from %s",
 		             extract_filename,
 		             ova_filename);
@@ -186,8 +186,8 @@ out:
 }
 
 /**
- * ovf_package_load_from_ova_file:
- * @self: an #OvfPackage
+ * govf_package_load_from_ova_file:
+ * @self: a #GovfPackage
  * @filename: an .ova file name
  * @error: a #GError or %NULL
  *
@@ -196,22 +196,22 @@ out:
  * Returns: %TRUE if the operation succeeded
  */
 gboolean
-ovf_package_load_from_ova_file (OvfPackage   *self,
-                                const gchar  *filename,
-                                GError      **error)
+govf_package_load_from_ova_file (GovfPackage  *self,
+                                 const gchar  *filename,
+                                 GError      **error)
 {
 	g_autofree gchar *tmp_path = NULL;
 	gint tmp_fd = -1;
 	gboolean ret = TRUE;
 
-	g_return_val_if_fail (OVF_IS_PACKAGE (self), FALSE);
+	g_return_val_if_fail (GOVF_IS_PACKAGE (self), FALSE);
 	g_return_val_if_fail (filename != NULL, FALSE);
 
 	g_free (self->ova_filename);
 	self->ova_filename = g_strdup (filename);
 
 	/* open a temporary file */
-	tmp_fd = g_file_open_tmp ("ovf-package-XXXXXX.ovf", &tmp_path, error);
+	tmp_fd = g_file_open_tmp ("govf-package-XXXXXX.ovf", &tmp_path, error);
 	if (tmp_fd == -1) {
 		ret = FALSE;
 		goto out;
@@ -223,7 +223,7 @@ ovf_package_load_from_ova_file (OvfPackage   *self,
 		goto out;
 	}
 
-	if (!ovf_package_load_from_file (self, tmp_path, error)) {
+	if (!govf_package_load_from_file (self, tmp_path, error)) {
 		ret = FALSE;
 		goto out;
 	}
@@ -238,8 +238,8 @@ out:
 }
 
 /**
- * ovf_package_load_from_file:
- * @self: an #OvfPackage
+ * govf_package_load_from_file:
+ * @self: a #GovfPackage
  * @filename: an .ovf file name
  * @error: a #GError or %NULL
  *
@@ -248,25 +248,25 @@ out:
  * Returns: %TRUE if the operation succeeded
  */
 gboolean
-ovf_package_load_from_file (OvfPackage   *self,
-                            const gchar  *filename,
-                            GError      **error)
+govf_package_load_from_file (GovfPackage  *self,
+                             const gchar  *filename,
+                             GError      **error)
 {
 	g_autofree gchar *data = NULL;
 	gsize length;
 
-	g_return_val_if_fail (OVF_IS_PACKAGE (self), FALSE);
+	g_return_val_if_fail (GOVF_IS_PACKAGE (self), FALSE);
 	g_return_val_if_fail (filename != NULL, FALSE);
 
 	if (!g_file_get_contents (filename, &data, &length, error))
 		return FALSE;
 
-	return ovf_package_load_from_data (self, data, length, error);
+	return govf_package_load_from_data (self, data, length, error);
 }
 
 /**
- * ovf_package_save_file:
- * @self: an #OvfPackage
+ * govf_package_save_file:
+ * @self: a #GovfPackage
  * @filename: an .ovf file name
  * @error: a #GError or %NULL
  *
@@ -275,15 +275,15 @@ ovf_package_load_from_file (OvfPackage   *self,
  * Returns: %TRUE if the operation succeeded
  */
 gboolean
-ovf_package_save_file (OvfPackage   *self,
-                       const gchar  *filename,
-                       GError      **error)
+govf_package_save_file (GovfPackage  *self,
+                        const gchar  *filename,
+                        GError      **error)
 {
 	gboolean ret = TRUE;
 	int length;
 	xmlChar *data = NULL;
 
-	g_return_val_if_fail (OVF_IS_PACKAGE (self), FALSE);
+	g_return_val_if_fail (GOVF_IS_PACKAGE (self), FALSE);
 	g_return_val_if_fail (filename != NULL, FALSE);
 
 	xmlDocDumpMemory (self->doc, &data, &length);
@@ -367,32 +367,32 @@ parse_disks (xmlXPathContext *ctx)
 
 	disks = g_ptr_array_new_with_free_func (g_object_unref);
 	for (i = 0; i < obj->nodesetval->nodeNr; i++) {
-		OvfDisk *disk = ovf_disk_new ();
+		GovfDisk *disk = govf_disk_new ();
 		xmlNode *node = obj->nodesetval->nodeTab[i];
 		xmlChar *str;
 
 		str = xmlGetNsProp (node,
 		                    (const xmlChar *) "capacity",
 		                    (const xmlChar *) OVF_NS_ENVELOPE);
-		ovf_disk_set_capacity (disk, (const gchar *) str);
+		govf_disk_set_capacity (disk, (const gchar *) str);
 		xmlFree (str);
 
 		str = xmlGetNsProp (node,
 		                    (const xmlChar *) "diskId",
 		                    (const xmlChar *) OVF_NS_ENVELOPE);
-		ovf_disk_set_disk_id (disk, (const gchar *) str);
+		govf_disk_set_disk_id (disk, (const gchar *) str);
 		xmlFree (str);
 
 		str = xmlGetNsProp (node,
 		                    (const xmlChar *) "fileRef",
 		                    (const xmlChar *) OVF_NS_ENVELOPE);
-		ovf_disk_set_file_ref (disk, (const gchar *) str);
+		govf_disk_set_file_ref (disk, (const gchar *) str);
 		xmlFree (str);
 
 		str = xmlGetNsProp (node,
 		                    (const xmlChar *) "format",
 		                    (const xmlChar *) OVF_NS_ENVELOPE);
-		ovf_disk_set_format (disk, (const gchar *) str);
+		govf_disk_set_format (disk, (const gchar *) str);
 		xmlFree (str);
 
 		g_ptr_array_add (disks, disk);
@@ -418,8 +418,8 @@ disk_filename_by_file_ref (xmlXPathContext *ctx, const gchar *file_ref)
 
 
 /**
- * ovf_package_load_from_data:
- * @self: an #OvfPackage
+ * govf_package_load_from_data:
+ * @self: a #GovfPackage
  * @data: OVF data
  * @length: size of the OVF data
  * @error: a #GError or %NULL
@@ -429,16 +429,16 @@ disk_filename_by_file_ref (xmlXPathContext *ctx, const gchar *file_ref)
  * Returns: %TRUE if the operation succeeded
  */
 gboolean
-ovf_package_load_from_data (OvfPackage   *self,
-                            const gchar  *data,
-                            gssize        length,
-                            GError      **error)
+govf_package_load_from_data (GovfPackage  *self,
+                             const gchar  *data,
+                             gssize        length,
+                             GError      **error)
 {
 	g_autofree gchar *desc = NULL;
 	g_autofree gchar *name = NULL;
 	gboolean ret;
 
-	g_return_val_if_fail (OVF_IS_PACKAGE (self), FALSE);
+	g_return_val_if_fail (GOVF_IS_PACKAGE (self), FALSE);
 	g_return_val_if_fail (data != NULL, FALSE);
 
 	g_clear_pointer (&self->ctx, xmlXPathFreeContext);
@@ -447,8 +447,8 @@ ovf_package_load_from_data (OvfPackage   *self,
 	self->doc = xmlParseMemory (data, length);
 	if (self->doc == NULL) {
 		g_set_error (error,
-		             OVF_PACKAGE_ERROR,
-		             OVF_PACKAGE_ERROR_XML,
+		             GOVF_PACKAGE_ERROR,
+		             GOVF_PACKAGE_ERROR_XML,
 		             "Could not parse XML");
 		ret = FALSE;
 		goto out;
@@ -461,8 +461,8 @@ ovf_package_load_from_data (OvfPackage   *self,
 
 	if (!xpath_section_exists (self->ctx, OVF_PATH_VIRTUALSYSTEM)) {
 		g_set_error (error,
-		             OVF_PACKAGE_ERROR,
-		             OVF_PACKAGE_ERROR_XML,
+		             GOVF_PACKAGE_ERROR,
+		             GOVF_PACKAGE_ERROR_XML,
 		             "Could not find VirtualSystem section");
 		ret = FALSE;
 		goto out;
@@ -470,8 +470,8 @@ ovf_package_load_from_data (OvfPackage   *self,
 
 	if (!xpath_section_exists (self->ctx, OVF_PATH_OPERATINGSYSTEM)) {
 		g_set_error (error,
-		             OVF_PACKAGE_ERROR,
-		             OVF_PACKAGE_ERROR_XML,
+		             GOVF_PACKAGE_ERROR,
+		             GOVF_PACKAGE_ERROR_XML,
 		             "Could not find OperatingSystem section");
 		ret = FALSE;
 		goto out;
@@ -479,8 +479,8 @@ ovf_package_load_from_data (OvfPackage   *self,
 
 	if (!xpath_section_exists (self->ctx, OVF_PATH_VIRTUALHARDWARE)) {
 		g_set_error (error,
-		             OVF_PACKAGE_ERROR,
-		             OVF_PACKAGE_ERROR_XML,
+		             GOVF_PACKAGE_ERROR,
+		             GOVF_PACKAGE_ERROR_XML,
 		             "Could not find VirtualHardware section");
 		ret = FALSE;
 		goto out;
@@ -505,15 +505,15 @@ out:
 }
 
 /**
- * ovf_package_get_disks:
- * @self: an #OvfPackage
+ * govf_package_get_disks:
+ * @self: a #GovfPackage
  *
  * Returns an array with all the disks associated with the OVF package.
  *
- * Returns: (element-type OvfDisk) (transfer full): an array
+ * Returns: (element-type GovfDisk) (transfer full): an array
  */
 GPtrArray *
-ovf_package_get_disks (OvfPackage *self)
+govf_package_get_disks (GovfPackage *self)
 {
 	if (self->disks == NULL)
 		return NULL;
@@ -522,9 +522,9 @@ ovf_package_get_disks (OvfPackage *self)
 }
 
 /**
- * ovf_package_extract_disk:
- * @self: an #OvfPackage
- * @disk: an #OvfDisk to extract
+ * govf_package_extract_disk:
+ * @self: a #GovfPackage
+ * @disk: a #GovfDisk to extract
  * @save_path: full path to extract to
  * @error: a #GError or %NULL
  *
@@ -533,31 +533,31 @@ ovf_package_get_disks (OvfPackage *self)
  * Returns: %TRUE if the operation succeeded
  */
 gboolean
-ovf_package_extract_disk (OvfPackage   *self,
-                          OvfDisk      *disk,
-                          const gchar  *save_path,
-                          GError      **error)
+govf_package_extract_disk (GovfPackage  *self,
+                           GovfDisk     *disk,
+                           const gchar  *save_path,
+                           GError      **error)
 {
 	const gchar *file_ref;
 	g_autofree gchar *filename = NULL;
 
-	g_return_val_if_fail (OVF_IS_PACKAGE (self), FALSE);
-	g_return_val_if_fail (OVF_IS_DISK (disk), FALSE);
+	g_return_val_if_fail (GOVF_IS_PACKAGE (self), FALSE);
+	g_return_val_if_fail (GOVF_IS_DISK (disk), FALSE);
 	g_return_val_if_fail (save_path != NULL, FALSE);
 
 	if (self->ova_filename == NULL) {
 		g_set_error (error,
-			     OVF_PACKAGE_ERROR,
-			     OVF_PACKAGE_ERROR_FAILED,
+			     GOVF_PACKAGE_ERROR,
+			     GOVF_PACKAGE_ERROR_FAILED,
 			     "No OVA package specified");
 		return FALSE;
 	}
 
-	file_ref = ovf_disk_get_file_ref (disk);
+	file_ref = govf_disk_get_file_ref (disk);
 	if (file_ref == NULL || file_ref[0] == '\0') {
 		g_set_error (error,
-			     OVF_PACKAGE_ERROR,
-			     OVF_PACKAGE_ERROR_FAILED,
+			     GOVF_PACKAGE_ERROR,
+			     GOVF_PACKAGE_ERROR_FAILED,
 			     "Disk is missing a file ref");
 		return FALSE;
 	}
@@ -565,8 +565,8 @@ ovf_package_extract_disk (OvfPackage   *self,
 	filename = disk_filename_by_file_ref (self->ctx, file_ref);
 	if (filename == NULL || filename[0] == '\0') {
 		g_set_error (error,
-			     OVF_PACKAGE_ERROR,
-			     OVF_PACKAGE_ERROR_FAILED,
+			     GOVF_PACKAGE_ERROR,
+			     GOVF_PACKAGE_ERROR_FAILED,
 			     "Could not find a filename for a disk");
 		return FALSE;
 	}
@@ -582,22 +582,22 @@ ovf_package_extract_disk (OvfPackage   *self,
 }
 
 /**
- * ovf_package_new:
+ * govf_package_new:
  *
- * Creates a new #OvfPackage.
+ * Creates a new #GovfPackage.
  *
- * Returns: (transfer full): an #OvfPackage
+ * Returns: (transfer full): a #GovfPackage
  */
-OvfPackage *
-ovf_package_new (void)
+GovfPackage *
+govf_package_new (void)
 {
-	return g_object_new (OVF_TYPE_PACKAGE, NULL);
+	return g_object_new (GOVF_TYPE_PACKAGE, NULL);
 }
 
 static void
-ovf_package_finalize (GObject *object)
+govf_package_finalize (GObject *object)
 {
-	OvfPackage *self = OVF_PACKAGE (object);
+	GovfPackage *self = GOVF_PACKAGE (object);
 
 	if (self->disks != NULL)
 		g_ptr_array_free (self->disks, TRUE);
@@ -608,18 +608,18 @@ ovf_package_finalize (GObject *object)
 
 	g_free (self->ova_filename);
 
-	G_OBJECT_CLASS (ovf_package_parent_class)->finalize (object);
+	G_OBJECT_CLASS (govf_package_parent_class)->finalize (object);
 }
 
 static void
-ovf_package_class_init (OvfPackageClass *klass)
+govf_package_class_init (GovfPackageClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
-	object_class->finalize = ovf_package_finalize;
+	object_class->finalize = govf_package_finalize;
 }
 
 static void
-ovf_package_init (OvfPackage *self)
+govf_package_init (GovfPackage *self)
 {
 }

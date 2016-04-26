@@ -18,9 +18,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#include "ovf-disk.h"
+#include "govf-disk.h"
 
-struct _OvfDisk
+struct _GovfDisk
 {
 	GObject			  parent_instance;
 
@@ -30,159 +30,159 @@ struct _OvfDisk
 	gchar			 *format;
 };
 
-G_DEFINE_TYPE (OvfDisk, ovf_disk, G_TYPE_OBJECT)
+G_DEFINE_TYPE (GovfDisk, govf_disk, G_TYPE_OBJECT)
 
 /**
- * ovf_disk_get_capacity:
- * @self: an #OvfDisk
+ * govf_disk_get_capacity:
+ * @self: a #GovfDisk
  *
  * Returns the disk's capacity.
  *
  * Returns: (transfer none): the capacity
  */
 const gchar *
-ovf_disk_get_capacity (OvfDisk *self)
+govf_disk_get_capacity (GovfDisk *self)
 {
 	return self->capacity;
 }
 
 /**
- * ovf_disk_set_capacity:
- * @self: an #OvfDisk
+ * govf_disk_set_capacity:
+ * @self: a #GovfDisk
  * @capacity: capacity for the disk
  *
  * Sets a new capacity for the disk.
  */
 void
-ovf_disk_set_capacity (OvfDisk     *self,
-                       const gchar *capacity)
+govf_disk_set_capacity (GovfDisk    *self,
+                        const gchar *capacity)
 {
 	g_free (self->capacity);
 	self->capacity = g_strdup (capacity);
 }
 
 /**
- * ovf_disk_get_disk_id:
- * @self: an #OvfDisk
+ * govf_disk_get_disk_id:
+ * @self: a #GovfDisk
  *
  * Returns the disk id.
  *
  * Returns: (transfer none): the disk id
  */
 const gchar *
-ovf_disk_get_disk_id (OvfDisk *self)
+govf_disk_get_disk_id (GovfDisk *self)
 {
 	return self->disk_id;
 }
 
 /**
- * ovf_disk_set_disk_id:
- * @self: an #OvfDisk
+ * govf_disk_set_disk_id:
+ * @self: a #GovfDisk
  * @disk_id: disk id for the disk
  *
  * Sets a new disk id for the disk.
  */
 void
-ovf_disk_set_disk_id (OvfDisk     *self,
-                      const gchar *disk_id)
+govf_disk_set_disk_id (GovfDisk    *self,
+                       const gchar *disk_id)
 {
 	g_free (self->disk_id);
 	self->disk_id = g_strdup (disk_id);
 }
 
 /**
- * ovf_disk_get_file_ref:
- * @self: an #OvfDisk
+ * govf_disk_get_file_ref:
+ * @self: a #GovfDisk
  *
  * Returns the disk's file reference.
  *
  * Returns: (transfer none): the file ref
  */
 const gchar *
-ovf_disk_get_file_ref (OvfDisk *self)
+govf_disk_get_file_ref (GovfDisk *self)
 {
 	return self->file_ref;
 }
 
 /**
- * ovf_disk_set_file_ref:
- * @self: an #OvfDisk
+ * govf_disk_set_file_ref:
+ * @self: a #GovfDisk
  * @file_ref: file ref for the disk
  *
  * Sets a new file reference for the disk.
  */
 void
-ovf_disk_set_file_ref (OvfDisk     *self,
-                       const gchar *file_ref)
+govf_disk_set_file_ref (GovfDisk    *self,
+                        const gchar *file_ref)
 {
 	g_free (self->file_ref);
 	self->file_ref = g_strdup (file_ref);
 }
 
 /**
- * ovf_disk_get_format:
- * @self: an #OvfDisk
+ * govf_disk_get_format:
+ * @self: a #GovfDisk
  *
  * Returns the disk's format.
  *
  * Returns: (transfer none): the format
  */
 const gchar *
-ovf_disk_get_format (OvfDisk *self)
+govf_disk_get_format (GovfDisk *self)
 {
 	return self->format;
 }
 
 /**
- * ovf_disk_set_format:
- * @self: an #OvfDisk
+ * govf_disk_set_format:
+ * @self: a #GovfDisk
  * @format: format for the disk
  *
  * Sets a new format for the disk.
  */
 void
-ovf_disk_set_format (OvfDisk     *self,
-                     const gchar *format)
+govf_disk_set_format (GovfDisk    *self,
+                      const gchar *format)
 {
 	g_free (self->format);
 	self->format = g_strdup (format);
 }
 
 /**
- * ovf_disk_new:
+ * govf_disk_new:
  *
- * Creates a new #OvfDisk.
+ * Creates a new #GovfDisk.
  *
- * Returns: (transfer full): an #OvfDisk
+ * Returns: (transfer full): a #GovfDisk
  */
-OvfDisk *
-ovf_disk_new (void)
+GovfDisk *
+govf_disk_new (void)
 {
-	return g_object_new (OVF_TYPE_DISK, NULL);
+	return g_object_new (GOVF_TYPE_DISK, NULL);
 }
 
 static void
-ovf_disk_finalize (GObject *object)
+govf_disk_finalize (GObject *object)
 {
-	OvfDisk *self = OVF_DISK (object);
+	GovfDisk *self = GOVF_DISK (object);
 
 	g_free (self->capacity);
 	g_free (self->disk_id);
 	g_free (self->file_ref);
 	g_free (self->format);
 
-	G_OBJECT_CLASS (ovf_disk_parent_class)->finalize (object);
+	G_OBJECT_CLASS (govf_disk_parent_class)->finalize (object);
 }
 
 static void
-ovf_disk_class_init (OvfDiskClass *klass)
+govf_disk_class_init (GovfDiskClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
-	object_class->finalize = ovf_disk_finalize;
+	object_class->finalize = govf_disk_finalize;
 }
 
 static void
-ovf_disk_init (OvfDisk *self)
+govf_disk_init (GovfDisk *self)
 {
 }

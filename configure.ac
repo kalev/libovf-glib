@@ -1,13 +1,13 @@
 AC_PREREQ(2.63)
 
-AC_INIT([libovf-glib],
+AC_INIT([libgovf],
         [0.1],
-        [https://github.com/kalev/libovf-glib/issues],
-        [libovf-glib])
+        [https://github.com/kalev/libgovf/issues],
+        [libgovf])
 
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_HEADERS([config.h])
-AC_CONFIG_SRCDIR([libovf-glib/ovf.h])
+AC_CONFIG_SRCDIR([govf/govf.h])
 
 AM_INIT_AUTOMAKE([1.11 tar-ustar dist-xz no-dist-gzip foreign])
 AM_SILENT_RULES([yes])
@@ -20,7 +20,7 @@ GNOME_COMPILE_WARNINGS([maximum])
 
 GLIB_TESTS
 
-PKG_CHECK_MODULES(LIBOVF_GLIB, [
+PKG_CHECK_MODULES(LIBGOVF, [
 	gobject-2.0
 	glib-2.0
 	gio-2.0
@@ -67,8 +67,8 @@ AM_CONDITIONAL([WITH_VALA], [test "x$enable_vala" = "xyes"])
 
 AC_CONFIG_FILES([
 Makefile
-libovf-glib-0.1.pc
-libovf-glib/Makefile
+govf/Makefile
+libgovf.pc
 tests/Makefile
 ])
 

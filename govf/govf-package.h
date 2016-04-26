@@ -18,10 +18,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#ifndef __OVF_PACKAGE_H__
-#define __OVF_PACKAGE_H__
+#ifndef __GOVF_PACKAGE_H__
+#define __GOVF_PACKAGE_H__
 
-#include "ovf-disk.h"
+#include "govf-disk.h"
 
 #include <gio/gio.h>
 #include <glib.h>
@@ -29,41 +29,41 @@
 
 G_BEGIN_DECLS
 
-#define OVF_TYPE_PACKAGE (ovf_package_get_type ())
-G_DECLARE_FINAL_TYPE (OvfPackage, ovf_package, OVF, PACKAGE, GObject)
+#define GOVF_TYPE_PACKAGE (govf_package_get_type ())
+G_DECLARE_FINAL_TYPE (GovfPackage, govf_package, GOVF, PACKAGE, GObject)
 
-#define OVF_PACKAGE_ERROR (ovf_package_error_quark ())
+#define GOVF_PACKAGE_ERROR (govf_package_error_quark ())
 
 typedef enum
 {
-	OVF_PACKAGE_ERROR_FAILED,
-	OVF_PACKAGE_ERROR_NOT_FOUND,
-	OVF_PACKAGE_ERROR_XML,
-	OVF_PACKAGE_ERROR_LAST
-} OvfPackageError;
+	GOVF_PACKAGE_ERROR_FAILED,
+	GOVF_PACKAGE_ERROR_NOT_FOUND,
+	GOVF_PACKAGE_ERROR_XML,
+	GOVF_PACKAGE_ERROR_LAST
+} GovfPackageError;
 
-GQuark			  ovf_package_error_quark		(void);
+GQuark			  govf_package_error_quark		(void);
 
-OvfPackage		 *ovf_package_new			(void);
-gboolean		  ovf_package_load_from_ova_file	(OvfPackage		 *self,
+GovfPackage		 *govf_package_new			(void);
+gboolean		  govf_package_load_from_ova_file	(GovfPackage		 *self,
 								 const gchar		 *filename,
 								 GError			**error);
-gboolean		  ovf_package_load_from_file		(OvfPackage		 *self,
+gboolean		  govf_package_load_from_file		(GovfPackage		 *self,
 								 const gchar		 *filename,
 								 GError			**error);
-gboolean		  ovf_package_load_from_data		(OvfPackage		 *self,
+gboolean		  govf_package_load_from_data		(GovfPackage		 *self,
 								 const gchar		 *data,
 								 gssize			  length,
 								 GError			**error);
-gboolean		  ovf_package_save_file			(OvfPackage		 *self,
+gboolean		  govf_package_save_file		(GovfPackage		 *self,
 								 const gchar		 *filename,
 								 GError			**error);
-GPtrArray		 *ovf_package_get_disks			(OvfPackage		 *self);
-gboolean		  ovf_package_extract_disk		(OvfPackage		 *self,
-								 OvfDisk		 *disk,
+GPtrArray		 *govf_package_get_disks		(GovfPackage		 *self);
+gboolean		  govf_package_extract_disk		(GovfPackage		 *self,
+								 GovfDisk		 *disk,
 								 const gchar		 *save_path,
 								 GError			**error);
 
 G_END_DECLS
 
-#endif /* __OVF_PACKAGE_H__ */
+#endif /* __GOVF_PACKAGE_H__ */
