@@ -78,6 +78,8 @@ static void
 test_save_ovf (void)
 {
 	g_autofree gchar *contents = NULL;
+	g_autofree gchar *filename = NULL;
+	g_autofree gchar *tmp_dir = NULL;
 	g_autoptr(GError) error = NULL;
 	g_autoptr(GovfPackage) ovf_package = NULL;
 	gsize length = 0;
@@ -89,14 +91,21 @@ test_save_ovf (void)
 	                             &error);
 	g_assert_no_error (error);
 
+	tmp_dir = g_dir_make_tmp ("libgovf-test-XXXXXX", &error);
+	g_assert_no_error (error);
+
 	/* save it back to disk */
-	govf_package_save_file (ovf_package, "/tmp/Fedora_23.ovf", &error);
+	filename = g_build_filename (tmp_dir, "Fedora_23.ovf", NULL);
+	govf_package_save_file (ovf_package, filename, &error);
 	g_assert_no_error (error);
 
 	/* make sure it's not 0 bytes */
-	g_file_get_contents ("/tmp/Fedora_23.ovf", &contents, &length, &error);
+	g_file_get_contents (filename, &contents, &length, &error);
 	g_assert (length > 0);
 	g_assert_no_error (error);
+
+	g_unlink (filename);
+	g_rmdir (tmp_dir);
 }
 
 static void
@@ -124,8 +133,8 @@ test_get_disks (void)
 static void
 test_extract_disk (void)
 {
-	g_autofree gchar *tmp_dir = NULL;
 	g_autofree gchar *filename = NULL;
+	g_autofree gchar *tmp_dir = NULL;
 	g_autoptr(GError) error = NULL;
 	g_autoptr(GPtrArray) ovf_disks = NULL;
 	g_autoptr(GovfPackage) ovf_package = NULL;
@@ -149,9 +158,10 @@ test_extract_disk (void)
 	                           filename,
 	                           &error);
 	g_assert_no_error (error);
-
 	g_assert (g_file_test (filename, G_FILE_TEST_EXISTS));
+
 	g_unlink (filename);
+	g_rmdir (tmp_dir);
 }
 
 int
